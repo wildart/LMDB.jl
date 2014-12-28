@@ -14,4 +14,8 @@ before_install:
   - sudo apt-get install libpcre3-dev julia -y
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
-  - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("LMDB")'
+  - julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.resolve()'
+  - julia -e 'Pkg.build("LMDB")'
+  - julia -e 'Pkg.test("LMDB", coverage=true)'
+after_success:
+  - julia -e 'cd(Pkg.dir("LMDB")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
