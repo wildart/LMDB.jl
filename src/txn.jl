@@ -16,7 +16,13 @@ isopen(txn::Transaction) = txn.handle != C_NULL
 
 @doc "Create a transaction for use with the environment."->
 function start(env::Environment; flags::Uint32 = 0x00000000)
-    handle = ccall( (:mdb_txn_start, liblmdbwrapper), Ptr{Void}, (Ptr{Void}, Ptr{Void}, Cuint), env.handle, C_NULL, flags)
+    ret = Cint[0]
+    handle = ccall( (:mdb_txn_start, liblmdbwrapper), Ptr{Void},
+                    (Ptr{Void}, Cuint, Ptr{Cint}),
+                    env.handle, flags, ret)
+    if ret[1] != 0
+        warn(errormsg(ret))
+    end
     return Transaction(handle, env)
 end
 

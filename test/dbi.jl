@@ -12,12 +12,13 @@ module LMDB_DBI
     # Procedural style
     env = create()
     try
-        put(env, :Flags, LMDB.NOSYNC)
+        #put!(env, :DBs, 2)
+        #open(env, dbname; flags = LMDB.FIXEDMAP)
         open(env, dbname)
         txn = start(env)
         dbi = open(txn)
-        put(txn, dbi, key+1, val*string(key+1))
-        put(txn, dbi, key, val*string(key))
+        put!(txn, dbi, key+1, val*string(key+1))
+        put!(txn, dbi, key, val*string(key))
         @test isopen(txn)
         commit(txn)
         @test !isopen(txn)
@@ -30,23 +31,14 @@ module LMDB_DBI
 
     # Block style
     create() do env
-        put(env, :Flags, LMDB.NOSYNC)
+        put!(env, :Flags, LMDB.NOSYNC)
         open(env, dbname)
         start(env) do txn
-            open(txn, flags = REVERSEKEY) do (txn, dbi)
-                @test get(txn, dbi, key) == val*string(key)
-                abort(txn)
+            open(txn, flags = LMDB.REVERSEKEY) do dbi
+                value = get(txn, dbi, key, String)
+                println("Got value for key $(key): $(value)")
+                @test value == val*string(key)
             end
-        end
-    end
-
-    # Block style
-    create() do env
-        put(env, :Flags, LMDB.NOSYNC)
-        open(env, dbname)
-        open(start(env), flags = REVERSEKEY) do (txn, dbi)
-            @test get(txn, dbi, key) == val*string(key)
-            abort(txn)
         end
     end
 

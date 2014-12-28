@@ -6,16 +6,17 @@
 MDB_env* mdb_env_create_default() {
     MDB_env *env;
     int rc = mdb_env_create(&env);
-    if(rc == ENOMEM)
+    if(rc)
         env = NULL;
     return env;
 }
 
-MDB_txn* mdb_txn_start(MDB_env *env, MDB_txn *parent, unsigned int flags) {
+MDB_txn* mdb_txn_start(MDB_env *env, unsigned int flags, int* ret) {
     MDB_txn *txn;
-    int rc = mdb_txn_begin(env, parent, flags, &txn);
-    if(!rc)
+    int rc = mdb_txn_begin(env, NULL, flags, &txn);
+    if(rc)
         txn = NULL;
+    *ret = rc;
     return txn;
 }
 
@@ -37,8 +38,8 @@ int mdb_kv_put(MDB_txn *txn, MDB_dbi dbi, size_t key_size, void *key_data, size_
     return rc;
 }
 
-void* mdb_kv_get(MDB_txn *txn, MDB_dbi dbi, size_t key_size, void *key_data, size_t *data_size, int* rc) {
-    void *data_data;
+unsigned char* mdb_kv_get(MDB_txn *txn, MDB_dbi dbi, size_t key_size, void *key_data, size_t *data_size, int* rc) {
+    unsigned char *data_data;
 
     MDB_val key, data;
     key.mv_size = key_size;
@@ -46,8 +47,9 @@ void* mdb_kv_get(MDB_txn *txn, MDB_dbi dbi, size_t key_size, void *key_data, siz
     *rc = mdb_get(txn, dbi, &key, &data);
     if (rc) {
         *data_size = data.mv_size;
-        data_data = malloc(data.mv_size);
-        memcpy(data_data, data.mv_data, data.mv_size);
+        //data_data = malloc(data.mv_size);
+        //memcpy(data_data, data.mv_data, data.mv_size);
+        data_data = data.mv_data;
     }
     return data_data;
 }

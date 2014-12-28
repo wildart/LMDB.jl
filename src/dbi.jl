@@ -2,7 +2,7 @@
 type DBI
     handle::Cuint
     name::String
-    DBI(dbi::Cuint, name::String) = new(dbi, txn, name)
+    DBI(dbi::Cuint, name::String) = new(dbi, name)
 end
 
 @doc "Check if database is open." ->
@@ -10,7 +10,7 @@ isopen(dbi::DBI) = dbi.handle != 0x00000000
 
 @doc "Open a database in the environment."->
 function open(txn::Transaction; dbname::String = "", flags::Uint32 = 0x00000000)
-    if length(dbname) == 0
+    if length(dbname) > 0
         cdbname = bytestring(dbname)
     else
         cdbname = C_NULL
@@ -28,7 +28,7 @@ end
 function open(f::Function, txn::Transaction; dbname::String = "", flags::Uint32 = 0x00000000)
     dbi = open(txn; dbname=dbname, flags=flags)
     try
-        f((txn,dbi))
+        f(dbi)
     finally
         close(environment(txn), dbi)
     end
