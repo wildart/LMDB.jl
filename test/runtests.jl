@@ -1,5 +1,9 @@
-using LMDB
-using Base.Test
+tests = ["env",
+         "dbi"]
 
-# write your own tests here
-@test 1 == 1
+for t in tests
+    fp = "$t.jl"
+    println("* running $fp ...")
+    include(fp)
+end
+
