@@ -16,7 +16,7 @@ function open(txn::Transaction; dbname::String = "", flags::Uint32 = 0x00000000)
         cdbname = C_NULL
     end
     handle = Cuint[0]
-    ret = ccall( (:mdb_dbi_open, liblmdb), Cint, (Ptr{Void}, Ptr{Cchar}, Cuint, Ptr{Cuint}), txn.handle, cdbname, flags, handle)
+    ret = ccall( (:mdb_dbi_open, liblmdbjl), Cint, (Ptr{Void}, Ptr{Cchar}, Cuint, Ptr{Cuint}), txn.handle, cdbname, flags, handle)
     if ret != 0
         warn(errormsg(ret))
         handle[1] = 0
@@ -39,14 +39,14 @@ function close(env::Environment, dbi::DBI)
     if !isopen(env)
         error("Environment is closed")
     end
-    ccall( (:mdb_dbi_close, liblmdb), Cint, (Ptr{Void}, Cuint), env.handle, dbi.handle)
+    ccall( (:mdb_dbi_close, liblmdbjl), Cint, (Ptr{Void}, Cuint), env.handle, dbi.handle)
     dbi.handle = 0x00000000
 end
 
 @doc "Retrieve the DB flags for a database handle."->
 function get(txn::Transaction, dbi::DBI)
     flags = Cuint[0]
-    ret = ccall( (:mdb_dbi_flags, liblmdb), Cint, (Ptr{Void}, Cuint, Ptr{Cuint}), txn.handle, dbi.handle, flags)
+    ret = ccall( (:mdb_dbi_flags, liblmdbjl), Cint, (Ptr{Void}, Cuint, Ptr{Cuint}), txn.handle, dbi.handle, flags)
     if ret != 0
         warn(errormsg(ret))
     end
@@ -56,7 +56,7 @@ end
 @doc "Empty or delete+close a database."->
 function drop(txn::Transaction, dbi::DBI; delete=false)
     del = delete ? int32(1) : int32(0)
-    ret = ccall( (:mdb_drop, liblmdb), Cint, (Ptr{Void}, Cuint, Cint), txn.handle, dbi.handle, del)
+    ret = ccall( (:mdb_drop, liblmdbjl), Cint, (Ptr{Void}, Cuint, Cint), txn.handle, dbi.handle, del)
     if ret != 0
         warn(errormsg(ret))
     end

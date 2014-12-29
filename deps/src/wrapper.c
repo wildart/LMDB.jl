@@ -1,6 +1,4 @@
-#include "errno.h"
 #include "stdlib.h"
-#include "string.h"
 #include "lmdb.h"
 
 MDB_env* mdb_env_create_default() {
@@ -47,8 +45,6 @@ unsigned char* mdb_kv_get(MDB_txn *txn, MDB_dbi dbi, size_t key_size, void *key_
     *rc = mdb_get(txn, dbi, &key, &data);
     if (rc) {
         *data_size = data.mv_size;
-        //data_data = malloc(data.mv_size);
-        //memcpy(data_data, data.mv_data, data.mv_size);
         data_data = data.mv_data;
     }
     return data_data;

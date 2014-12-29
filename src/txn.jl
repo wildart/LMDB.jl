@@ -17,7 +17,7 @@ isopen(txn::Transaction) = txn.handle != C_NULL
 @doc "Create a transaction for use with the environment."->
 function start(env::Environment; flags::Uint32 = 0x00000000)
     ret = Cint[0]
-    handle = ccall( (:mdb_txn_start, liblmdbwrapper), Ptr{Void},
+    handle = ccall( (:mdb_txn_start, liblmdbjl), Ptr{Void},
                     (Ptr{Void}, Cuint, Ptr{Cint}),
                     env.handle, flags, ret)
     if ret[1] != 0
@@ -31,7 +31,7 @@ start(f::Function, env::Environment; flags::Uint32 = 0x00000000) = f(start(env, 
 
 @doc "Abandon all the operations of the transaction instead of saving them."->
 function abort(txn::Transaction)
-    ret = ccall( (:mdb_txn_abort, liblmdb), Cint, (Ptr{Void},), txn.handle)
+    ret = ccall( (:mdb_txn_abort, liblmdbjl), Cint, (Ptr{Void},), txn.handle)
     txn.handle = C_NULL
     if ret != 0
         warn(errormsg(ret))
@@ -41,7 +41,7 @@ end
 
 @doc "Commit all the operations of a transaction into the database."->
 function commit(txn::Transaction)
-    ret = ccall( (:mdb_txn_commit, liblmdb), Cint, (Ptr{Void},), txn.handle)
+    ret = ccall( (:mdb_txn_commit, liblmdbjl), Cint, (Ptr{Void},), txn.handle)
     txn.handle = C_NULL
     if ret != 0
         warn(errormsg(ret))
@@ -51,7 +51,7 @@ end
 
 @doc "Reset a read-only transaction."->
 function reset(txn::Transaction)
-    ret = ccall( (:mdb_txn_reset, liblmdb), Cint, (Ptr{Void},), txn.handle)
+    ret = ccall( (:mdb_txn_reset, liblmdbjl), Cint, (Ptr{Void},), txn.handle)
     if ret != 0
         warn(errormsg(ret))
     end
@@ -60,7 +60,7 @@ end
 
 @doc "Renew a read-only transaction."->
 function renew(txn::Transaction)
-    ret = ccall( (:mdb_txn_renew, liblmdb), Cint, (Ptr{Void},), txn.handle)
+    ret = ccall( (:mdb_txn_renew, liblmdbjl), Cint, (Ptr{Void},), txn.handle)
     if ret != 0
         warn(errormsg(ret))
     end

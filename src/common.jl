@@ -27,13 +27,13 @@ function version()
     major = Cint[0]
     minor = Cint[0]
     patch = Cint[0]
-    ver_str = ccall( (:mdb_version, liblmdb), Ptr{Cchar}, (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}), major, minor, patch)
+    ver_str = ccall( (:mdb_version, liblmdbjl), Ptr{Cchar}, (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}), major, minor, patch)
     return VersionNumber(major[1],minor[1],patch[1]), bytestring(ver_str)
 end
 
 @doc "Return a string describing a given error code." ->
 function errormsg(ret::Cint)
-    errstr = ccall( (:mdb_strerror, liblmdb), Ptr{Cchar}, (Cint,), ret)
+    errstr = ccall( (:mdb_strerror, liblmdbjl), Ptr{Cchar}, (Cint,), ret)
     return bytestring(errstr)
 end
 

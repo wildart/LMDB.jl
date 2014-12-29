@@ -15,7 +15,7 @@ function put!(txn::Transaction, dbi::DBI, key, val; flags::Uint32 = 0x00000000)
         valval=pointer(val)
     end
 
-    ret = ccall( (:mdb_kv_put, liblmdbwrapper), Cint,
+    ret = ccall( (:mdb_kv_put, liblmdbjl), Cint,
                  (Ptr{Void}, Cuint, Csize_t, Ptr{Void}, Csize_t, Ptr{Void}, Cuint),
                  txn.handle, dbi.handle, keysize[1], keyval, valsize[1], valval, flags)
     if ret != 0
@@ -37,7 +37,7 @@ function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     rc = Cint[0]
 
     # Get value
-    val = ccall( (:mdb_kv_get, LMDB.liblmdbwrapper), Ptr{Cuchar},
+    val = ccall( (:mdb_kv_get, LMDB.liblmdbjl), Ptr{Cuchar},
                  (Ptr{Void}, Cuint, Csize_t, Ptr{Void}, Ptr{Csize_t}, Ptr{Cint}),
                  txn.handle, dbi.handle, keysize[1], keyval, valsize, rc)
     ret = rc[1]
