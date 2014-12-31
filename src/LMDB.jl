@@ -2,7 +2,7 @@ module LMDB
     using BinDeps
     using Docile
 
-    import Base: open, close, get, put!, start, reset, isopen
+    import Base: open, close, get, put!, insert!, start, reset, isopen
 
     depsfile = Pkg.dir("LMDB","deps","deps.jl")
     if isfile(depsfile)

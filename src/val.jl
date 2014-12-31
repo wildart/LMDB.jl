@@ -1,5 +1,5 @@
 @doc "Store items into a database."->
-function put!(txn::Transaction, dbi::DBI, key, val; flags::Uint32 = 0x00000000)
+function insert!(txn::Transaction, dbi::DBI, key, val; flags::Uint32 = 0x00000000)
     keysize = Csize_t[uint32(sizeof(key))]
     valsize = Csize_t[uint32(sizeof(val))]
 
