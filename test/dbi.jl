@@ -42,5 +42,5 @@ module LMDB_DBI
         end
     end
 
-    run(`rm -rf $(dbname)`)
+    rm(dbname, recursive=true)
 end

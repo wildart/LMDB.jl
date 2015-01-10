@@ -39,5 +39,5 @@ module LMDB_Env
         open(env, dbname)
         @test isopen(env)
     end
-    run(`rm -rf $(dbname)`)
+    rm(dbname, recursive=true)
 end

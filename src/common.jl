@@ -1,5 +1,6 @@
 # Environment Flags
 # -----------------
+const EMPTY      = 0x00000000
 const FIXEDMAP   = 0x00000001 # mmap at a fixed address
 const NOSUBDIR   = 0x00004000 # no environment directory
 const NOSYNC     = 0x00010000 # don't fsync after commit
@@ -22,7 +23,26 @@ const INTEGERDUP = 0x00000020 # with MDB_DUPSORT, dups are numeric in native byt
 const REVERSEDUP = 0x00000040 # with #MDB_DUPSORT, use reverse string dups
 const CREATE     = 0x00040000 # create DB if not already existing
 
-@doc "Return the LMDB library version and version information." ->
+# Write Flags
+# -----------
+const NOOVERWRITE =0x00000010 # For put: Don't write if the key already exists.
+#= Only for #MDB_DUPSORT
+ * For put: don't write if the key and data pair already exist.
+ * For mdb_cursor_del: remove all duplicate data items.
+ =#
+const NODUPDATA = 0x00000020
+const CURRENT   = 0x00000040 # For mdb_cursor_put: overwrite the current key/data pair
+const RESERVE   = 0x00010000 # For put: Just reserve space for data, don't copy it. Return a pointer to the reserved space.
+const APPEND    = 0x00020000 # Data is being appended, don't split full pages.
+const APPENDDUP = 0x00040000 # Duplicate data is being appended, don't split full pages.
+const MULTIPLE  = 0x00080000 # Store multiple data items in one call. Only for DUPFIXED.
+
+@doc """
+## Description
+Return the LMDB library version and version information.
+## Returns
+* `(VersionNumber,String)`: Tuple of a library verison and a library version string.
+""" ->
 function version()
     major = Cint[0]
     minor = Cint[0]
@@ -31,10 +51,20 @@ function version()
     return VersionNumber(major[1],minor[1],patch[1]), bytestring(ver_str)
 end
 
-@doc "Return a string describing a given error code." ->
-function errormsg(ret::Cint)
-    errstr = ccall( (:mdb_strerror, liblmdbjl), Ptr{Cchar}, (Cint,), ret)
+@doc """
+## Description
+Return a string describing a given error code.
+## Arguments
+* `err::Int32`: An error code.
+## Returns
+* `errstr::String`: The description of the error.
+""" ->
+function errormsg(err::Cint)
+    errstr = ccall( (:mdb_strerror, liblmdbjl), Ptr{Cchar}, (Cint,), err)
     return bytestring(errstr)
 end
 
+@doc """
+Check if binary flag is set in provided value.
+""" ->
 isflagset(value, flag) = (value & flag) == flag

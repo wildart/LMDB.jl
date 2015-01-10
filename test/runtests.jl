@@ -1,5 +1,6 @@
 tests = ["env",
-         "dbi"]
+         "dbi",
+         "cur"]
 
 for t in tests
     fp = "$t.jl"

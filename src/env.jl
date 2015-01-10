@@ -31,7 +31,7 @@ function create(f::Function)
 end
 
 @doc "Open an environment handle." ->
-function open(env::Environment, path::String; flags::Uint32 = 0x00000000, mode::Int32 = int32(436))
+function open(env::Environment, path::String; flags::Uint32 = EMPTY, mode::Int32 = int32(436))
     env.path = path
     cpath = bytestring(path)
     ret = ccall( (:mdb_env_open, liblmdbjl), Cint, (Ptr{Void}, Ptr{Cchar}, Cuint, Cint), env.handle, cpath, flags, mode)
@@ -44,7 +44,7 @@ end
 @doc "Close the environment and release the memory map." ->
 function close(env::Environment)
     if env.handle == C_NULL
-        error("Environment already closed")
+        error("Environment is already closed")
     end
     ccall( (:mdb_env_close, liblmdbjl), Void, (Ptr{Void},), env.handle)
     env.handle = C_NULL

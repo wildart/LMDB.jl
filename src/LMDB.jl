@@ -1,8 +1,9 @@
 module LMDB
     using BinDeps
     using Docile
+    @docstrings(manual = ["../doc/manual.md"])
 
-    import Base: open, close, get, put!, insert!, start, reset, isopen
+    import Base: open, close, get, put!, insert!, start, reset, isopen, count, delete!
 
     depsfile = Pkg.dir("LMDB","deps","deps.jl")
     if isfile(depsfile)
@@ -14,12 +15,12 @@ module LMDB
     export Environment, create, open, close, sync, put!, unset, get, path,
            Transaction, start, abort, commit, reset, renew, environment,
            DBI, drop,
+           Cursor, count, delete!,
            isflagset, isopen
 
     include("common.jl")
     include("env.jl")
     include("txn.jl")
     include("dbi.jl")
-    include("val.jl")
-
+    include("cur.jl")
 end
