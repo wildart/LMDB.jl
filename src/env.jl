@@ -1,6 +1,7 @@
-""" Opaque structure for a database environment.
+@doc """
+## Description
 A DB environment supports multiple databases, all residing in the same shared-memory map.
-"""
+""" ->
 type Environment
     handle::Ptr{Void}
     path::String

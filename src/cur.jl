@@ -1,4 +1,7 @@
-"A handle for a cursor in the DB environment."
+@doc """
+## Description
+A handle to a cursor structure for navigating through a database.
+""" ->
 type Cursor
     handle::Ptr{Void}
     Cursor(cur::Ptr{Void}) = new(cur)

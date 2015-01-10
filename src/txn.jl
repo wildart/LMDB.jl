@@ -1,7 +1,8 @@
-"""Opaque structure for a transaction handle.
+@doc """
+## Description
 A database transaction. Every operation requires a transaction handle.
 All database operations require a transaction handle. Transactions may be read-only or read-write.
-"""
+""" ->
 type Transaction
     handle::Ptr{Void}
     env::Environment

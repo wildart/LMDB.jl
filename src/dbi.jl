@@ -1,4 +1,7 @@
-"A handle for an individual database in the DB environment."
+@doc """
+## Description
+A handle for an individual database in the DB environment.
+""" ->
 type DBI
     handle::Cuint
     name::String
