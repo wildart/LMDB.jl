@@ -16,5 +16,5 @@ or clone package from this repository and build it.
 
 ## Documentation
 
-For more information, see the **[Documentation](http://wildart.github.io/LMDB.jl/master/)**.
+For more information, see the **[Documentation](http://wildart.github.io/LMDB.jl/)**.
 
