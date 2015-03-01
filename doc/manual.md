@@ -23,7 +23,7 @@ try
     txn = start(env)      # start new transaction
     dbi = open(txn)       # open database
     try
-        put!(txn, dbi, "key", "val") # add key-value pair
+        insert!(txn, dbi, "key", "val") # add key-value pair
         commit(txn)                  # commit transaction
     finally
         close(env, dbi)  # close db
