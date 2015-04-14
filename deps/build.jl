@@ -12,7 +12,7 @@ provides(Sources, URI(url), liblmdbjl, unpacked_dir="mdb-mdb")
 lmdbbuilddir = BinDeps.builddir(liblmdbjl)
 lmdbsrcdir = joinpath(BinDeps.depsdir(liblmdbjl),"src", "lmdb-$version")
 lmdbunpkddir = joinpath(BinDeps.depsdir(liblmdbjl),"src","mdb-mdb")
-lmdblibfile = joinpath(BinDeps.libdir(liblmdbjl),liblmdbjl.name*".so")
+lmdblib = joinpath(BinDeps.libdir(liblmdbjl),liblmdbjl.name*"."*BinDeps.shlib_ext)
 
 provides(BuildProcess,
 	(@build_steps begin
@@ -25,14 +25,17 @@ provides(BuildProcess,
 				`rm -rf $(lmdbunpkddir)`
 				@build_steps begin
 					ChangeDirectory(lmdbbuilddir)
-					FileRule(lmdblibfile, @build_steps begin
-						MakeTargets(env=[utf8("LMDBSRC")=>utf8(lmdbsrcdir)])
-						`make install`
-						`make clean`
-					end)
+					FileRule(lmdblib,
+						@build_steps begin
+							MakeTargets(env=[
+								utf8("LMDBSRC")=>utf8(lmdbsrcdir),
+								utf8("LMDBLIB")=>utf8(lmdblib)])
+							`make`
+						end
+					)
 				end
 			end
 		end
-	end), liblmdbjl, os = :Unix)
+	end), liblmdbjl)
 
 @BinDeps.install [ :liblmdbjl => :liblmdbjl]

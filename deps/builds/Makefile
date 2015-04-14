@@ -5,16 +5,13 @@ OPT = -O2 -g
 CFLAGS	= $(THREADS) $(OPT) $(W)
 SRCDIR = ../src
 PREFIX = ../usr
-LMDBLIB = liblmdbjl.so
+#LMDBLIB = ../usr/lib/liblmdbjl.so
 
 all: $(LMDBLIB)
 
 $(LMDBLIB):
+	mkdir -p $(PREFIX)/lib
 	$(CC) -fPIC -shared $(CFLAGS) $(SRCDIR)/wrapper.c $(LMDBSRC)/mdb.c $(LMDBSRC)/midl.c -o $(LMDBLIB) -I$(LMDBSRC)
 
 clean:
-	rm *.so
-
-install:
-	mkdir -p $(PREFIX)/lib
-	cp $(LMDBLIB) $(PREFIX)/lib
+	rm $(LMDBLIB)
