@@ -1,9 +1,12 @@
 module LMDB
     using BinDeps
-    using Docile
-    @docstrings(manual = ["../doc/manual.md"])
 
-    import Base: open, close, get, put!, insert!, start, reset, isopen, count, delete!
+    if VERSION < v"0.4.0-dev"
+        using Docile
+        eval(:(@document))
+    end
+
+    import Base: open, close, get, put!, insert!, start, reset, isopen, count, delete!, drop
 
     depsfile = Pkg.dir("LMDB","deps","deps.jl")
     if isfile(depsfile)

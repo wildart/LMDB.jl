@@ -1,0 +1,10 @@
+site_name:           LMDB.jl
+repo_url:            https://github.com/wildart/LMDB.jl
+site_description:    Julia interface to Lightning Memory-Mapped Database (LMDB)
+site_author:         Art Wild
+theme:               readthedocs
+markdown_extensions: [tables, fenced_code]
+pages:
+    - ['index.md', 'Introduction']
+    - ['manual.md', 'Manual', 'Overview']
+    - ['api/LMDB.md', 'API', 'LMDB']

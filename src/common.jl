@@ -37,12 +37,10 @@ const APPEND    = 0x00020000 # Data is being appended, don't split full pages.
 const APPENDDUP = 0x00040000 # Duplicate data is being appended, don't split full pages.
 const MULTIPLE  = 0x00080000 # Store multiple data items in one call. Only for DUPFIXED.
 
-@doc """
-## Description
-Return the LMDB library version and version information.
-## Returns
-* `(VersionNumber,String)`: Tuple of a library verison and a library version string.
-""" ->
+"""Return the LMDB library version and version information
+
+Function returns tuple `(VersionNumber,String)` that contains a library version and a library version string.
+"""
 function version()
     major = Cint[0]
     minor = Cint[0]
@@ -51,20 +49,15 @@ function version()
     return VersionNumber(major[1],minor[1],patch[1]), bytestring(ver_str)
 end
 
-@doc """
-## Description
-Return a string describing a given error code.
-## Arguments
+"""Return a string describing a given error code
+
+Function returns description of the error as a string. It accepts following arguments:
 * `err::Int32`: An error code.
-## Returns
-* `errstr::String`: The description of the error.
-""" ->
+"""
 function errormsg(err::Cint)
     errstr = ccall( (:mdb_strerror, liblmdbjl), Ptr{Cchar}, (Cint,), err)
     return bytestring(errstr)
 end
 
-@doc """
-Check if binary flag is set in provided value.
-""" ->
+""" Check if binary flag is set in provided value"""
 isflagset(value, flag) = (value & flag) == flag
