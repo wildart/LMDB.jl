@@ -41,7 +41,7 @@ insert!(txn, dbi, "key", "val")
 
 Commit all the operations of a transaction into the database. The transaction and its cursors must not be used after, because its handle is freed.
 ```julia
-commit(txn::Transaction)
+commit(txn)
 ```
 
 If you finished working with the database, close it with `close` call
