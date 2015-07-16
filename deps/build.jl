@@ -3,15 +3,15 @@ using BinDeps
 @BinDeps.setup
 
 version = "0.9.14"
-url = "https://gitorious.org/mdb/mdb/archive/LMDB_$(version).tar.gz"
+url = "https://github.com/LMDB/lmdb/archive/LMDB_$(version).tar.gz"
 
 liblmdbjl = library_dependency("liblmdbjl")
 
-provides(Sources, URI(url), liblmdbjl, unpacked_dir="mdb-mdb")
+provides(Sources, URI(url), liblmdbjl, unpacked_dir="lmdb-LMDB_$version")
 
 lmdbbuilddir = BinDeps.builddir(liblmdbjl)
 lmdbsrcdir = joinpath(BinDeps.depsdir(liblmdbjl),"src", "lmdb-$version")
-lmdbunpkddir = joinpath(BinDeps.depsdir(liblmdbjl),"src","mdb-mdb")
+lmdbunpkddir = joinpath(BinDeps.depsdir(liblmdbjl),"src","lmdb-LMDB_$version")
 lmdblib = joinpath(BinDeps.libdir(liblmdbjl),liblmdbjl.name*"."*BinDeps.shlib_ext)
 
 provides(BuildProcess,
