@@ -1,6 +1,4 @@
-tests = ["env",
-         "dbi",
-         "cur"]
+tests = ["common", "env", "dbi", "cur"]
 
 for t in tests
     fp = "$t.jl"
