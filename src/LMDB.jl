@@ -6,7 +6,7 @@ module LMDB
         eval(:(@document))
     end
 
-    import Base: open, close, get, put!, insert!, start, reset, isopen, count, delete!, drop
+    import Base: open, close, getindex, setindex!, insert!, start, reset, isopen, count, delete!, drop, info, show
 
     depsfile = Pkg.dir("LMDB","deps","deps.jl")
     if isfile(depsfile)
@@ -15,15 +15,16 @@ module LMDB
         error("LMDB not properly installed. Please run Pkg.build(\"LMDB\")")
     end
 
-    export Environment, create, open, close, sync, put!, unset, get, path,
+    export Environment, create, open, close, sync, set!, unset!, getindex, setindex!, path, info, show,
            Transaction, start, abort, commit, reset, renew, environment,
            DBI, drop,
            Cursor, count, delete!,
-           isflagset, isopen
+           isflagset, isopen,
+           LMDBError, EnvironmentInfo
 
     include("common.jl")
     include("env.jl")
     include("txn.jl")
-    include("dbi.jl")
-    include("cur.jl")
+    #include("dbi.jl")
+    # include("cur.jl")
 end

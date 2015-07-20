@@ -42,10 +42,10 @@ end
 
 *Note:* A database directory must exist and be writable.
 """
-function open(env::Environment, path::String; flags::Cuint = Cuint(EMPTY), mode::Cmode_t = 0o755)
+function open(env::Environment, path::String; flags::EnvironmentFlags = EMPTY, mode::Cmode_t = 0o755)
     env.path = path
     cpath = bytestring(path)
-    ret = ccall( (:mdb_env_open, liblmdb), Cint, (Ptr{Void}, Cstring, Cuint, Cmode_t), env.handle, cpath, flags, mode)
+    ret = ccall( (:mdb_env_open, liblmdb), Cint, (Ptr{Void}, Cstring, Cuint, Cmode_t), env.handle, cpath, Cuint(flags), mode)
     (ret != 0) && throw(LMDBError(ret))
     return ret::Cint
 end
@@ -140,4 +140,37 @@ function getindex(env::Environment, option::Symbol)
         warn("Cannot get $(string(option)) value")
     end
     return value[1]
+end
+
+"""Information about the environment"""
+immutable EnvironmentInfo
+    mapaddr::Ptr{Void}
+    mapsize::Csize_t     # Size of the data memory map
+    last_pgno::Csize_t   # ID of the last used page
+    last_txnid::Csize_t  # ID of the last committed transaction
+    maxreaders::Cuint    # max reader slots in the environment */
+    numreaders::Cuint    # max reader slots used in the environment */
+    EnvironmentInfo() = new(C_NULL, zero(Csize_t), zero(Csize_t), zero(Csize_t), zero(Cuint), zero(Cuint))
+end
+
+"""Return information about the LMDB environment."""
+function info(env::Environment)
+    ei_ref = Ref(EnvironmentInfo())
+    !isopen(env) && return ei_ref[]
+    ret = ccall( (:mdb_env_info, liblmdb), Cint, (Ptr{Void}, Ptr{EnvironmentInfo}), env.handle, ei_ref)
+    (ret != 0) && throw(LMDBError(ret))
+    return ei_ref[]
+end
+
+function show(io::IO, env::Environment)
+    print(io,"Environment is ", isopen(env) ? "opened" : "closed")
+    if isopen(env)
+        print(io,"\nDB path: $(path(env))")
+        ei = info(env)
+        print(io,"\nSize of the data memory map: $(ei.mapsize)")
+        print(io,"\nID of the last used page: $(ei.last_pgno)")
+        print(io,"\nID of the last committed transaction: $(ei.last_txnid)")
+        print(io,"\nMax reader slots in the environment: $(ei.maxreaders)")
+        print(io,"\nMax reader slots used in the environment: $(ei.numreaders)")
+    end
 end
