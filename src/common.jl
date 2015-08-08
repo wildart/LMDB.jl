@@ -1,9 +1,21 @@
 typealias Cmode_t Cushort
 
+"Generic structure used for passing keys and data in and out of the database."
+type MDBValue
+    size::Csize_t   # size of the data item
+    data::Ptr{Void} # address of the data item
+end
+MDBValue() = MDBValue(zero(Csize_t), C_NULL)
+function MDBValue(val)
+    val_size = sizeof(val)
+    val = isa(val, Number) ? typeof(val)[val] : val
+    return MDBValue(val_size, pointer(val))
+end
+
+
 # Environment Flags
 # -----------------
 @enum(EnvironmentFlags,
-      EMPTY      = 0x00000000,
       FIXEDMAP   = 0x00000001, # mmap at a fixed address
       NOSUBDIR   = 0x00004000, # no environment directory
       NOSYNC     = 0x00010000, # don't fsync after commit
@@ -11,7 +23,7 @@ typealias Cmode_t Cushort
       NOMETASYNC = 0x00040000, # don't fsync metapage after commit
       WRITEMAP   = 0x00080000, # use writable mmap
       MAPASYNC   = 0x00100000, # use asynchronous msync when #MDB_WRITEMAP is used
-      MDB_NOTLS  = 0x00200000, # tie reader locktable slots to #MDB_txn objects instead of to threads
+      NOTLS      = 0x00200000, # tie reader locktable slots to #MDB_txn objects instead of to threads
       NOLOCK     = 0x00400000, # don't do any locking, caller must manage their own locks
       NORDAHEAD  = 0x00800000, # don't do readahead (no effect on Windows)
       NOMEMINIT  = 0x01000000 # don't initialize malloc'd memory before writing to datafile
@@ -45,6 +57,29 @@ typealias Cmode_t Cushort
       MULTIPLE  = 0x00080000 # Store multiple data items in one call. Only for DUPFIXED.
 )
 
+# Cursor `get` operations
+# -----------------------
+@enum(CursorOps,
+      FIRST,          # Position at first key/data item
+      FIRST_DUP,      # Position at first data item of current key. Only for #DUPSORT
+      GET_BOTH,       # Position at key/data pair. Only for #MDB_DUPSORT
+      GET_BOTH_RANGE, # Position at key, nearest data. Only for #MDB_DUPSORT
+      GET_CURRENT,    # Return key/data at current cursor position
+      GET_MULTIPLE,   # Return key and up to a page of duplicate data items from current cursor position. Move cursor to prepare for #NEXT_MULTIPLE. Only for #DUPFIXED
+      LAST,           # Position at last key/data item
+      LAST_DUP,       # Position at last data item of current key. Only for #DUPSORT
+      NEXT,           # Position at next data item
+      NEXT_DUP,       # Position at next data item of current key. Only for #DUPSORT
+      NEXT_MULTIPLE,  # Return key and up to a page of duplicate data items from next cursor position. Move cursor to prepare for #NEXT_MULTIPLE. Only for #DUPFIXED
+      NEXT_NODUP,     # Position at first data item of next key
+      PREV,           # Position at previous data item
+      PREV_DUP,       # Position at previous data item of current key. Only for #MDB_DUPSORT
+      PREV_NODUP,     # Position at last data item of previous key
+      SET,            # Position at specified key
+      SET_KEY,        # Position at specified key, return key + data
+      SET_RANGE)      # Position at first key greater than or equal to specified key.
+
+
 """Return the LMDB library version and version information
 
 Function returns tuple `(VersionNumber,String)` that contains a library version and a library version string.
@@ -71,10 +106,7 @@ end
 immutable LMDBError <: Exception
     code::Cint
     msg::AbstractString
-    function LMDBError(code::Integer)
-        err_code = Cint(code)
-        return new(err_code, errormsg(err_code))
-    end
+    LMDBError(code::Cint) = new(code, errormsg(code))
 end
 Base.show(io::IO, err::LMDBError) = print(io, "Code[$(err.code)]: $(err.msg)")
 

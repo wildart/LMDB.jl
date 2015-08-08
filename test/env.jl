@@ -10,7 +10,6 @@ module LMDB_Env
     @test env[:Readers] == 126
     @test env[:KeySize] == 511
     @test env[:Flags] == 0
-    @test !isopen(env)
 
     # Manipulate flags
     @test !isflagset(env[:Flags], Cuint(LMDB.NOSYNC))

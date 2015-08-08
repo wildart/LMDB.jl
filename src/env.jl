@@ -12,7 +12,7 @@ end
 path(env::Environment) = env.path
 
 "Check if environment is open"
-isopen(env::Environment) = env.handle != C_NULL && length(path(env))>0
+isopen(env::Environment) = env.handle != C_NULL
 
 "Create an LMDB environment handle"
 function create()
@@ -42,10 +42,12 @@ end
 
 *Note:* A database directory must exist and be writable.
 """
-function open(env::Environment, path::String; flags::EnvironmentFlags = EMPTY, mode::Cmode_t = 0o755)
+function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
     env.path = path
     cpath = bytestring(path)
-    ret = ccall( (:mdb_env_open, liblmdb), Cint, (Ptr{Void}, Cstring, Cuint, Cmode_t), env.handle, cpath, Cuint(flags), mode)
+    ret = ccall((:mdb_env_open, liblmdb), Cint,
+                 (Ptr{Void}, Cstring, Cuint, Cmode_t),
+                  env.handle, cpath, flags, mode)
     (ret != 0) && throw(LMDBError(ret))
     return ret::Cint
 end

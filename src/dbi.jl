@@ -8,28 +8,26 @@ type DBI
 end
 
 "Check if database is open"
-isopen(dbi::DBI) = dbi.handle != EMPTY
+isopen(dbi::DBI) = dbi.handle != zero(Cuint)
 
 "Open a database in the environment"
-function open(txn::Transaction; dbname::String = "", flags::Uint32 = EMPTY)
-    if length(dbname) > 0
-        cdbname = bytestring(dbname)
-    else
-        cdbname = C_NULL
-    end
+function open(txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
+    cdbname = length(dbname) > 0 ? bytestring(dbname) : convert(Cstring, Ptr{UInt8}(C_NULL))
     handle = Cuint[0]
-    ret = ccall( (:mdb_dbi_open, liblmdbjl), Cint, (Ptr{Void}, Ptr{Cchar}, Cuint, Ptr{Cuint}), txn.handle, cdbname, flags, handle)
-    (ret != 0) && error(errormsg(ret))
+    ret = ccall((:mdb_dbi_open, liblmdb), Cint,
+                (Ptr{Void}, Cstring, Cuint, Ptr{Cuint}),
+                 txn.handle, cdbname, flags, handle)
+    (ret != 0) && throw(LMDBError(ret))
     return DBI(handle[1], dbname)
 end
 
 "Wrapper of DBI `open` for `do` construct"
-function open(f::Function, txn::Transaction; dbname::String = "", flags::Uint32 = EMPTY)
-    dbi = open(txn; dbname=dbname, flags=flags)
+function open(f::Function, txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
+    dbi = open(txn, dbname, flags=flags)
     try
         f(dbi)
     finally
-        close(environment(txn), dbi)
+        close(env(txn), dbi)
     end
 end
 
@@ -38,75 +36,79 @@ function close(env::Environment, dbi::DBI)
     if !isopen(env)
         warn("Environment is closed")
     end
-    ccall( (:mdb_dbi_close, liblmdbjl), Cint, (Ptr{Void}, Cuint), env.handle, dbi.handle)
-    dbi.handle = EMPTY
+    ccall((:mdb_dbi_close, liblmdb), Void, (Ptr{Void}, Cuint), env.handle, dbi.handle)
+    dbi.handle = zero(Cuint)
 end
 
 "Retrieve the DB flags for a database handle"
-function get(txn::Transaction, dbi::DBI)
+function flags(txn::Transaction, dbi::DBI)
     flags = Cuint[0]
-    ret = ccall( (:mdb_dbi_flags, liblmdbjl), Cint, (Ptr{Void}, Cuint, Ptr{Cuint}), txn.handle, dbi.handle, flags)
-    (ret != 0) && error(errormsg(ret))
+    ret = ccall((:mdb_dbi_flags, liblmdb), Cint,
+                (Ptr{Void}, Cuint, Ptr{Cuint}),
+                 txn.handle, dbi.handle, flags)
+    (ret != 0) && throw(LMDBError(ret))
     return flags[1]
 end
 
-"Empty or delete+close a database"
+"""Empty or delete+close a database.
+
+If parameter `delete` is `false` DB will be emptied, otherwise
+DB will be deleted from the environment and DB handle will be closed
+"""
 function drop(txn::Transaction, dbi::DBI; delete=false)
     del = delete ? int32(1) : int32(0)
-    ret = ccall( (:mdb_drop, liblmdbjl), Cint, (Ptr{Void}, Cuint, Cint), txn.handle, dbi.handle, del)
-    (ret != 0) && error(errormsg(ret))
-    return flags[1]
+    ret = ccall((:mdb_drop, liblmdb), Cint,
+                (Ptr{Void}, Cuint, Cint),
+                 txn.handle, dbi.handle, del)
+    (ret != 0) && throw(LMDBError(ret))
+    return ret
 end
 
 "Store items into a database"
-function insert!(txn::Transaction, dbi::DBI, key, val; flags::Uint32 = EMPTY)
-    keysize = Csize_t[sizeof(key)]
-    valsize = Csize_t[sizeof(val)]
+function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint=zero(Cuint))
+    mdb_key_ref = Ref(MDBValue(key))
+    mdb_val_ref = Ref(MDBValue(val))
 
-    if isa(key, Number)
-        keyval=typeof(key)[key]
-    else
-        keyval=pointer(key)
-    end
+    ret = ccall((:mdb_put, liblmdb), Cint,
+                (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
+                txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
 
-    if isa(val, Number)
-        valval=typeof(val)[val]
-    else
-        valval=pointer(val)
-    end
+    (ret != 0) && throw(LMDBError(ret))
+    return ret
+end
 
-    ret = ccall( (:mdb_kv_put, liblmdbjl), Cint,
-                 (Ptr{Void}, Cuint, Csize_t, Ptr{Void}, Csize_t, Ptr{Void}, Cuint),
-                 txn.handle, dbi.handle, keysize[1], keyval, valsize[1], valval, flags)
-    (ret != 0) && error(errormsg(ret))
+"Delete items from a database"
+function delete!(txn::Transaction, dbi::DBI, key, val)
+    mdb_key_ref = Ref(MDBValue(key))
+    mdb_val_ref = Ref(MDBValue(val))
+
+    ret = ccall((:mdb_del, liblmdb), Cint,
+                (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
+                txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
+
+    (ret != 0) && throw(LMDBError(ret))
     return ret
 end
 
 "Get items from a database"
 function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     # Setup parameters
-    keysize = Csize_t[sizeof(key)]
-    valsize = Csize_t[0]
-    if isa(key, Number)
-        keyval=typeof(key)[key]
-    else
-        keyval=pointer(key)
-    end
-    rc = Cint[0]
+    mdb_key_ref = Ref(MDBValue(key))
+    mdb_val_ref = Ref(MDBValue())
 
     # Get value
-    val = ccall( (:mdb_kv_get, LMDB.liblmdbjl), Ptr{Cuchar},
-                 (Ptr{Void}, Cuint, Csize_t, Ptr{Void}, Ptr{Csize_t}, Ptr{Cint}),
-                 txn.handle, dbi.handle, keysize[1], keyval, valsize, rc)
-    ret = rc[1]
-    (ret != 0) && error(errormsg(ret))
+    ret = ccall((:mdb_get, liblmdb), Cint,
+                 (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
+                 txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
+    (ret != 0) && throw(LMDBError(ret))
 
     # Convert to proper type
-    value = pointer_to_array(val, (valsize[1],), true)
-    if T <: String
-        value = bytestring(value)
+    mdb_val = mdb_val_ref[]
+    if T <: AbstractString
+        value = bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     else
-        value = reinterpret(T, value)
+        nvals = floor(Int, mdb_val.size/sizeof(T))
+        value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
     end
     return length(value) == 1 ? value[1] : value
 end

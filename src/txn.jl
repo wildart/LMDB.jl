@@ -4,13 +4,15 @@ All database operations require a transaction handle. Transactions may be read-o
 """
 type Transaction
     handle::Ptr{Void}
-    env::Environment
-    Transaction() = new(C_NULL, Environment())
-    Transaction(h::Ptr{Void}, env::Environment) = new(h, env)
+    Transaction() = new(C_NULL)
+    Transaction(h::Ptr{Void}) = new(h)
 end
 
-"Returns the transaction's environment"
-environment(txn::Transaction) = txn.env
+function env(txn::Transaction)
+    env_ptr = ccall((:mdb_txn_env, liblmdb), Ptr{Void}, (Ptr{Void},), txn.handle)
+    (env_ptr == C_NULL) && return nothing
+    return Environment(env_ptr)
+end
 
 "Check if transaction is open."
 isopen(txn::Transaction) = txn.handle != C_NULL
@@ -20,16 +22,16 @@ isopen(txn::Transaction) = txn.handle != C_NULL
 `start` function creates a new transaction and returns `Transaction` object.
 It allows to set transaction flags with `flags` option.
 """
-function start(env::Environment; flags::EnvironmentFlags = EMPTY,
+function start(env::Environment; flags::Cuint=zero(Cuint),
                parent::Nullable{Transaction} = Nullable{Transaction}())
     txn_ref = Ref{Ptr{Void}}(C_NULL)
     ret = ccall( (:mdb_txn_begin, liblmdb), Cint,
                   (Ptr{Void}, Ptr{Void}, Cuint, Ptr{Ptr{Void}}),
-                   env.handle, get(parent, Transaction()).handle,  Cuint(flags), txn_ref)
+                   env.handle, get(parent, Transaction()).handle,  flags, txn_ref)
     (ret != 0) && throw(LMDBError(ret))
-    return Transaction(txn_ref[], env)
+    return Transaction(txn_ref[])
 end
-start(f::Function, env::Environment; flags::EnvironmentFlags = EMPTY) = f(start(env, flags=flags))
+start(f::Function, env::Environment; flags::Cuint=zero(Cuint)) = f(start(env, flags=flags))
 
 """Abandon all the operations of the transaction instead of saving them
 

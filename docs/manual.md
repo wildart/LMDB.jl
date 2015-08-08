@@ -11,12 +11,12 @@ Environment parameters are set with `put!` function that accepts:
 * parameter `value`.
 
 ```julia
-put!(env, :DBs, 2)
+env[:DBs] = 2
 ```
 
 Environment parameters can be read with `get` function:
 ```julia
-get(env, :Readers)
+env[:Readers]
 ```
 
 Next, the environment must be opened using `open` function that takes as parameter path to the directory where database files reside. Make sure that the database directory exists and is writable.
@@ -36,7 +36,7 @@ dbi = open(txn)
 
 Put key-value pair into the database with `put!` function:
 ```julia
-insert!(txn, dbi, "key", "val")
+put!(txn, dbi, "key", "val")
 ```
 
 Commit all the operations of a transaction into the database. The transaction and its cursors must not be used after, because its handle is freed.
@@ -63,7 +63,7 @@ try
     txn = start(env)      # start new transaction
     dbi = open(txn)       # open database
     try
-        insert!(txn, dbi, "key", "val") # add key-value pair
+        put!(txn, dbi, "key", "val") # add key-value pair
         commit(txn)                  # commit transaction
     finally
         close(env, dbi)  # close db

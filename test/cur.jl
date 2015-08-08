@@ -20,8 +20,8 @@ module LMDB_CUR
         txn = start(env)
         cur = open(txn, dbi)
         try
-            @test 0 == insert!(cur, key+1, val*string(key+1))
-            @test 0 == insert!(cur, key, val*string(key))
+            @test 0 == put!(cur, key+1, val*string(key+1))
+            @test 0 == put!(cur, key, val*string(key))
         finally
             close(cur)
             commit(txn)

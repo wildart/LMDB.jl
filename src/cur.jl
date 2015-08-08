@@ -11,12 +11,12 @@ isopen(cur::Cursor) = cur.handle != C_NULL
 
 "Create a cursor"
 function open(txn::Transaction, dbi::DBI)
-    ret = Cint[0]
-    handle = ccall( (:mdb_cursor_start, liblmdbjl), Ptr{Void},
-                    (Ptr{Void}, Cuint, Ptr{Cint}),
-                    txn.handle, dbi.handle, ret)
-    (ret[1] != 0) && error(errormsg(ret))
-    return Cursor(handle)
+    cur_ptr_ref = Ref{Ptr{Void}}(C_NULL)
+    ret = ccall((:mdb_cursor_open, liblmdb), Cint,
+                 (Ptr{Void}, Cuint, Ptr{Ptr{Void}}),
+                  txn.handle, dbi.handle, cur_ptr_ref)
+    (ret != 0) && throw(LMDBError(ret))
+    return Cursor(cur_ptr_ref[])
 end
 
 "Close a cursor"
@@ -24,81 +24,87 @@ function close(cur::Cursor)
     if cur.handle == C_NULL
         warn("Cursor is already closed")
     end
-    ccall( (:mdb_cursor_close, liblmdbjl), Void, (Ptr{Void},), cur.handle)
+    ccall((:mdb_cursor_close, liblmdb), Void, (Ptr{Void},), cur.handle)
     cur.handle = C_NULL
 end
 
 "Renew a cursor"
 function renew(txn::Transaction, cur::Cursor)
-    ret = ccall( (:mdb_cursor_renew, liblmdbjl), Cint, (Ptr{Void}, Ptr{Void}), txn.handle, cur.handle)
-    (ret != 0) && error(errormsg(ret))
-    return ret::Cint
+    ret = ccall((:mdb_cursor_renew, liblmdb), Cint,
+                 (Ptr{Void}, Ptr{Void}), txn.handle, cur.handle)
+    (ret != 0) && throw(LMDBError(ret))
+    return ret
 end
 
-"Delete current key/data pair"
-function delete!(cur::Cursor; flags::Uint32 = 0x00000000)
-    ret = ccall( (:mdb_cursor_del, liblmdbjl), Cint, (Ptr{Void}, Cuint), cur.handle, flags)
-    (ret != 0) && error(errormsg(ret))
-    return ret::Cint
+"Return the cursor's transaction"
+function txn(cur::Cursor)
+    txn_ptr = ccall((:mdb_cursor_txn, liblmdb), Ptr{Void}, (Ptr{Void},), cur.handle)
+    (txn_ptr == C_NULL) && return nothing
+    return Transaction(txn_ptr)
+end
+
+"Return the cursor's database"
+function dbi(cur::Cursor)
+    dbi = ccall((:mdb_cursor_dbi, liblmdb), Cuint, (Ptr{Void},), cur.handle)
+    (dbi == 0) && return nothing
+    return DBI(dbi, "")
+end
+
+"""Retrieve by cursor.
+
+This function retrieves key/data pairs from the database.
+"""
+function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
+    # Setup parameters
+    mdb_key_ref = Ref(MDBValue(key))
+    mdb_val_ref = Ref(MDBValue())
+
+    # Get value
+    ret = ccall( (:mdb_cursor_get, liblmdb), Cint,
+                  (Ptr{Void}, Ptr{MDBValue}, Ptr{MDBValue}, Cint),
+                   cur.handle, mdb_key_ref, mdb_val_ref, Cint(op))
+    (ret != 0) && throw(LMDBError(ret))
+
+    # Convert to proper type
+    mdb_val = mdb_val_ref[]
+    if T <: AbstractString
+        value = bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+    else
+        nvals = floor(Int, mdb_val.size/sizeof(T))
+        value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
+    end
+    return length(value) == 1 ? value[1] : value
+end
+
+"""Store by cursor.
+
+This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
+"""
+function put!(cur::Cursor, key, val; flags::Cuint = zero(Cuint))
+    mdb_key_ref = Ref(MDBValue(key))
+    mdb_val_ref = Ref(MDBValue(val))
+
+    ret = ccall((:mdb_cursor_put, liblmdb), Cint,
+                 (Ptr{Void}, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
+                  cur.handle, mdb_key_ref, mdb_val_ref, flags)
+
+    (ret != 0) && throw(LMDBError(ret))
+    return ret
+end
+
+"Delete current key/data pair to which the cursor refers"
+function delete!(cur::Cursor; flags::Cuint = zero(Cuint))
+    ret = ccall((:mdb_cursor_del, liblmdb), Cint,
+                 (Ptr{Void}, Cuint), cur.handle, flags)
+    (ret != 0) && throw(LMDBError(ret))
+    return ret
 end
 
 "Return count of duplicates for current key"
 function count(cur::Cursor)
     countp = Csize_t[0]
-    ret = ccall( (:mdb_cursor_count, liblmdbjl), Cint, (Ptr{Void}, Csize_t), cur.handle, countp)
-    (ret != 0) && error(errormsg(ret))
-    return countp[1]
-end
-
-"Store items into a database"
-function insert!(cur::Cursor, key, val; flags::Uint32 = EMPTY)
-    keysize = Csize_t[uint32(sizeof(key))]
-    valsize = Csize_t[uint32(sizeof(val))]
-
-    if isa(key, Number)
-        keyval=typeof(key)[key]
-    else
-        keyval=pointer(key)
-    end
-
-    if isa(val, Number)
-        valval=typeof(val)[val]
-    else
-        valval=pointer(val)
-    end
-
-    ret = ccall( (:mdb_cursor_kv_put, liblmdbjl), Cint,
-                 (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{Void}, Cuint),
-                 cur.handle, keysize[1], keyval, valsize[1], valval, flags)
-    (ret != 0) && error(errormsg(ret))
-    return ret
-end
-
-#int  mdb_cursor_get(MDB_cursor *cursor, MDB_val *key, MDB_val *data, MDB_cursor_op op);
-"Get items from a database"
-function get{T}(txn::Transaction, dbi::Cursor, key, ::Type{T})
-    # Setup parameters
-    keysize = Csize_t[uint32(sizeof(key))]
-    valsize = Csize_t[0]
-    if isa(key, Number)
-        keyval=typeof(key)[key]
-    else
-        keyval=pointer(key)
-    end
-    ret = Cint[0]
-
-    # Get value
-    val = ccall( (:mdb_cursor_kv_get, LMDB.liblmdbjl), Ptr{Cuchar},
-                 (Ptr{Void}, Cuint, Csize_t, Ptr{Void}, Ptr{Csize_t}, Ptr{Cint}),
-                 txn.handle, dbi.handle, keysize[1], keyval, valsize, ret)
-    (ret[1] != 0) && error(errormsg(ret))
-
-    # Convert to proper type
-    value = pointer_to_array(val, (valsize[1],), true)
-    if T <: String
-        value = bytestring(value)
-    else
-        value = reinterpret(T, value)
-    end
-    return length(value) == 1 ? value[1] : value
+    ret = ccall( (:mdb_cursor_count, liblmdb), Cint,
+                  (Ptr{Void}, Csize_t), cur.handle, countp)
+    (ret != 0) && throw(LMDBError(ret))
+    return Int(countp[1])
 end
