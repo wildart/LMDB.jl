@@ -16,15 +16,11 @@ cd(dirname(@__FILE__)) do
     end
 
     # Generate and save the contents of docstrings as markdown files.
-    for m in modules
-        filename = joinpath(api_directory, "$(module_name(m)).md")
-        try
-            save(filename, m)
-        catch err
-            println(err)
-            exit(1)
-        end
+    index  = Index()
+    for mod in modules
+        update!(index, save(joinpath(api_directory, "$(mod).md"), mod))
     end
+    save(joinpath(api_directory, "index.md"), index; md_subheader = :category)
 
     # Add a reminder not to edit the generated files.
     open(joinpath(api_directory, "README.md"), "w") do f
@@ -41,8 +37,5 @@ cd(dirname(@__FILE__)) do
 
     info("Adding all documentation changes in $(api_directory) to this commit.")
     success(`git add $(api_directory)`) || exit(1)
-
-    # info("Building final documentation.")
-    # success(`mkdocs build`) || exit(1)
 
 end

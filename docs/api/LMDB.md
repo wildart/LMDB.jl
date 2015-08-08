@@ -1,106 +1,123 @@
 # LMDB
 
 ## Exported
+
 ---
 
-### abort(txn::Transaction)
+<a id="method__abort.1" class="lexicon_definition"></a>
+#### abort(txn::LMDB.Transaction) [¶](#method__abort.1)
 Abandon all the operations of the transaction instead of saving them
 
-*Note:* The transaction and its cursors must not be used after, because its handle is freed.
+The transaction and its cursors must not be used after, because its handle is freed.
 
 
 *source:*
-[LMDB/src/txn.jl:38](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L38)
+[LMDB/src/txn.jl:40](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
 
 ---
 
-### close(cur::Cursor)
+<a id="method__close.1" class="lexicon_definition"></a>
+#### close(cur::LMDB.Cursor) [¶](#method__close.1)
 Close a cursor
 
 *source:*
-[LMDB/src/cur.jl:23](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L23)
+[LMDB/src/cur.jl:33](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### close(env::Environment)
+<a id="method__close.2" class="lexicon_definition"></a>
+#### close(env::LMDB.Environment) [¶](#method__close.2)
 Close the environment and release the memory map
 
 *source:*
-[LMDB/src/env.jl:52](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L52)
+[LMDB/src/env.jl:56](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### close(env::Environment, dbi::DBI)
+<a id="method__close.3" class="lexicon_definition"></a>
+#### close(env::LMDB.Environment,  dbi::LMDB.DBI) [¶](#method__close.3)
 Close a database handle
 
 *source:*
-[LMDB/src/dbi.jl:37](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L37)
+[LMDB/src/dbi.jl:36](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### commit(txn::Transaction)
+<a id="method__commit.1" class="lexicon_definition"></a>
+#### commit(txn::LMDB.Transaction) [¶](#method__commit.1)
 Commit all the operations of a transaction into the database
 
-*Note:* The transaction and its cursors must not be used after, because its handle is freed.
+The transaction and its cursors must not be used after, because its handle is freed.
 
 
 *source:*
-[LMDB/src/txn.jl:49](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L49)
+[LMDB/src/txn.jl:50](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
 
 ---
 
-### count(cur::Cursor)
+<a id="method__count.1" class="lexicon_definition"></a>
+#### count(cur::LMDB.Cursor) [¶](#method__count.1)
 Return count of duplicates for current key
 
 *source:*
-[LMDB/src/cur.jl:46](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L46)
+[LMDB/src/cur.jl:115](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### create()
+<a id="method__create.1" class="lexicon_definition"></a>
+#### create() [¶](#method__create.1)
 Create an LMDB environment handle
 
 *source:*
-[LMDB/src/env.jl:18](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L18)
+[LMDB/src/env.jl:18](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### create(f::Function)
+<a id="method__create.2" class="lexicon_definition"></a>
+#### create(f::Function) [¶](#method__create.2)
 Wrapper of `create` for `do` construct
 
 *source:*
-[LMDB/src/env.jl:24](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L24)
+[LMDB/src/env.jl:26](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### delete!(cur::Cursor)
-Delete current key/data pair
+<a id="method__delete.1" class="lexicon_definition"></a>
+#### delete!(cur::LMDB.Cursor) [¶](#method__delete.1)
+Delete current key/data pair to which the cursor refers
 
 *source:*
-[LMDB/src/cur.jl:39](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L39)
+[LMDB/src/cur.jl:107](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### drop(txn::Transaction, dbi::DBI)
-Empty or delete+close a database
+<a id="method__delete.2" class="lexicon_definition"></a>
+#### delete!(txn::LMDB.Transaction,  dbi::LMDB.DBI,  key,  val) [¶](#method__delete.2)
+Delete items from a database
 
 *source:*
-[LMDB/src/dbi.jl:54](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L54)
+[LMDB/src/dbi.jl:83](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### environment(txn::Transaction)
-Returns the transaction's environment
+<a id="method__drop.1" class="lexicon_definition"></a>
+#### drop(txn::LMDB.Transaction,  dbi::LMDB.DBI) [¶](#method__drop.1)
+Empty or delete+close a database.
+
+If parameter `delete` is `false` DB will be emptied, otherwise
+DB will be deleted from the environment and DB handle will be closed
+
 
 *source:*
-[LMDB/src/txn.jl:12](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L12)
+[LMDB/src/dbi.jl:60](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### get(env::Environment, option::Symbol)
+<a id="method__getindex.1" class="lexicon_definition"></a>
+#### getindex(env::LMDB.Environment,  option::Symbol) [¶](#method__getindex.1)
 Get environment flags and parameters
 
-`get` accepts folowing parameters:
+`getindex` accepts folowing parameters:
 * `env` db environment object
 * `option` symbol which indicates parameter. Currently supported parameters:
     * Flags
@@ -111,75 +128,99 @@ Get environment flags and parameters
 
 
 *source:*
-[LMDB/src/env.jl:118](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L118)
+[LMDB/src/env.jl:131](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### get(txn::Transaction, dbi::DBI)
-Retrieve the DB flags for a database handle
+<a id="method__get.1" class="lexicon_definition"></a>
+#### get{T}(cur::LMDB.Cursor,  key,  ::Type{T}) [¶](#method__get.1)
+Retrieve by cursor.
+
+This function retrieves key/data pairs from the database.
+
 
 *source:*
-[LMDB/src/dbi.jl:46](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L46)
+[LMDB/src/cur.jl:68](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### get{T}(txn::Transaction, dbi::Cursor, key, ::Type{T})
+<a id="method__get.2" class="lexicon_definition"></a>
+#### get{T}(cur::LMDB.Cursor,  key,  ::Type{T},  op::LMDB.CursorOps) [¶](#method__get.2)
+Retrieve by cursor.
+
+This function retrieves key/data pairs from the database.
+
+
+*source:*
+[LMDB/src/cur.jl:68](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
+
+---
+
+<a id="method__get.3" class="lexicon_definition"></a>
+#### get{T}(txn::LMDB.Transaction,  dbi::LMDB.DBI,  key,  ::Type{T}) [¶](#method__get.3)
 Get items from a database
 
 *source:*
-[LMDB/src/cur.jl:79](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L79)
+[LMDB/src/dbi.jl:96](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
-Get items from a database
+<a id="method__info.1" class="lexicon_definition"></a>
+#### info(env::LMDB.Environment) [¶](#method__info.1)
+Return information about the LMDB environment.
 
 *source:*
-[LMDB/src/dbi.jl:86](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L86)
+[LMDB/src/env.jl:160](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### isflagset(value, flag)
+<a id="method__isflagset.1" class="lexicon_definition"></a>
+#### isflagset(value,  flag) [¶](#method__isflagset.1)
  Check if binary flag is set in provided value
 
 *source:*
-[LMDB/src/common.jl:63](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/common.jl#L63)
+[LMDB/src/common.jl:114](file:///home/art/.julia/v0.4/LMDB/src/common.jl)
 
 ---
 
-### isopen(cur::Cursor)
+<a id="method__isopen.1" class="lexicon_definition"></a>
+#### isopen(cur::LMDB.Cursor) [¶](#method__isopen.1)
 Check if cursor is open
 
 *source:*
-[LMDB/src/cur.jl:10](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L10)
+[LMDB/src/cur.jl:10](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### isopen(dbi::DBI)
+<a id="method__isopen.2" class="lexicon_definition"></a>
+#### isopen(dbi::LMDB.DBI) [¶](#method__isopen.2)
 Check if database is open
 
 *source:*
-[LMDB/src/dbi.jl:11](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L11)
+[LMDB/src/dbi.jl:11](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### isopen(env::Environment)
+<a id="method__isopen.3" class="lexicon_definition"></a>
+#### isopen(env::LMDB.Environment) [¶](#method__isopen.3)
 Check if environment is open
 
 *source:*
-[LMDB/src/env.jl:15](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L15)
+[LMDB/src/env.jl:15](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### isopen(txn::Transaction)
+<a id="method__isopen.4" class="lexicon_definition"></a>
+#### isopen(txn::LMDB.Transaction) [¶](#method__isopen.4)
 Check if transaction is open.
 
 *source:*
-[LMDB/src/txn.jl:15](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L15)
+[LMDB/src/txn.jl:18](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
 
 ---
 
-### open(env::Environment, path::String)
+<a id="method__open.1" class="lexicon_definition"></a>
+#### open(env::LMDB.Environment,  path::AbstractString) [¶](#method__open.1)
 Open an environment handle
 
 `open` function accepts folowing parameters:
@@ -192,46 +233,142 @@ Open an environment handle
 
 
 *source:*
-[LMDB/src/env.jl:43](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L43)
+[LMDB/src/env.jl:45](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### open(f::Function, txn::Transaction)
+<a id="method__open.2" class="lexicon_definition"></a>
+#### open(f::Function,  txn::LMDB.Transaction) [¶](#method__open.2)
 Wrapper of DBI `open` for `do` construct
 
 *source:*
-[LMDB/src/dbi.jl:27](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L27)
+[LMDB/src/dbi.jl:25](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### open(txn::Transaction)
+<a id="method__open.3" class="lexicon_definition"></a>
+#### open(f::Function,  txn::LMDB.Transaction,  dbi::LMDB.DBI) [¶](#method__open.3)
+Wrapper of Cursor `open` for `do` construct
+
+*source:*
+[LMDB/src/cur.jl:23](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
+
+---
+
+<a id="method__open.4" class="lexicon_definition"></a>
+#### open(f::Function,  txn::LMDB.Transaction,  dbname::AbstractString) [¶](#method__open.4)
+Wrapper of DBI `open` for `do` construct
+
+*source:*
+[LMDB/src/dbi.jl:25](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
+
+---
+
+<a id="method__open.5" class="lexicon_definition"></a>
+#### open(txn::LMDB.Transaction) [¶](#method__open.5)
 Open a database in the environment
 
 *source:*
-[LMDB/src/dbi.jl:14](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L14)
+[LMDB/src/dbi.jl:14](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### open(txn::Transaction, dbi::DBI)
+<a id="method__open.6" class="lexicon_definition"></a>
+#### open(txn::LMDB.Transaction,  dbi::LMDB.DBI) [¶](#method__open.6)
 Create a cursor
 
 *source:*
-[LMDB/src/cur.jl:13](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L13)
+[LMDB/src/cur.jl:13](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### path(env::Environment)
+<a id="method__open.7" class="lexicon_definition"></a>
+#### open(txn::LMDB.Transaction,  dbname::AbstractString) [¶](#method__open.7)
+Open a database in the environment
+
+*source:*
+[LMDB/src/dbi.jl:14](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
+
+---
+
+<a id="method__path.1" class="lexicon_definition"></a>
+#### path(env::LMDB.Environment) [¶](#method__path.1)
 Return the path that was used in `open`
 
 *source:*
-[LMDB/src/env.jl:12](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L12)
+[LMDB/src/env.jl:12](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### put!(env::Environment, option::Symbol, val::Uint32)
+<a id="method__put.1" class="lexicon_definition"></a>
+#### put!(cur::LMDB.Cursor,  key,  val) [¶](#method__put.1)
+Store by cursor.
+
+This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
+
+
+*source:*
+[LMDB/src/cur.jl:94](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
+
+---
+
+<a id="method__put.2" class="lexicon_definition"></a>
+#### put!(txn::LMDB.Transaction,  dbi::LMDB.DBI,  key,  val) [¶](#method__put.2)
+Store items into a database
+
+*source:*
+[LMDB/src/dbi.jl:70](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
+
+---
+
+<a id="method__renew.1" class="lexicon_definition"></a>
+#### renew(txn::LMDB.Transaction) [¶](#method__renew.1)
+Renew a read-only transaction
+
+This acquires a new reader lock for a transaction handle that had been released by `reset`.
+It must be called before a reset transaction may be used again.
+
+
+*source:*
+[LMDB/src/txn.jl:72](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
+
+---
+
+<a id="method__renew.2" class="lexicon_definition"></a>
+#### renew(txn::LMDB.Transaction,  cur::LMDB.Cursor) [¶](#method__renew.2)
+Renew a cursor
+
+*source:*
+[LMDB/src/cur.jl:43](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
+
+---
+
+<a id="method__reset.1" class="lexicon_definition"></a>
+#### reset(txn::LMDB.Transaction) [¶](#method__reset.1)
+Reset a read-only transaction
+
+Abort the transaction like `abort`, but keep the transaction handle.
+
+
+*source:*
+[LMDB/src/txn.jl:61](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
+
+---
+
+<a id="method__set.1" class="lexicon_definition"></a>
+#### set!(env::LMDB.Environment,  flag::UInt32) [¶](#method__set.1)
+Set environment flags
+
+*source:*
+[LMDB/src/env.jl:75](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
+
+---
+
+<a id="method__setindex.1" class="lexicon_definition"></a>
+#### setindex!(env::LMDB.Environment,  val::UInt32,  option::Symbol) [¶](#method__setindex.1)
 Set environment flags and parameters
 
-`put!` accepts folowing parameters:
+`setindex!` accepts folowing parameters:
 * `env` db environment object
 * `option` symbol which indicates parameter. Currently supported parameters:
     * Flags
@@ -244,35 +381,12 @@ Set environment flags and parameters
 
 
 *source:*
-[LMDB/src/env.jl:89](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L89)
+[LMDB/src/env.jl:104](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### renew(txn::Transaction)
-Renew a read-only transaction
-
-*source:*
-[LMDB/src/txn.jl:64](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L64)
-
----
-
-### renew(txn::Transaction, cur::Cursor)
-Renew a cursor
-
-*source:*
-[LMDB/src/cur.jl:32](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L32)
-
----
-
-### reset(txn::Transaction)
-Reset a read-only transaction
-
-*source:*
-[LMDB/src/txn.jl:57](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L57)
-
----
-
-### start(env::Environment)
+<a id="method__start.1" class="lexicon_definition"></a>
+#### start(env::LMDB.Environment) [¶](#method__start.1)
 Create a transaction for use with the environment
 
 `start` function creates a new transaction and returns `Transaction` object.
@@ -280,81 +394,100 @@ It allows to set transaction flags with `flags` option.
 
 
 *source:*
-[LMDB/src/txn.jl:22](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L22)
+[LMDB/src/txn.jl:25](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
 
 ---
 
-### start(f::Function, env::Environment)
-Wrapper of `start` for `do` construct
-
-*source:*
-[LMDB/src/txn.jl:32](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L32)
-
----
-
-### sync(env::Environment)
+<a id="method__sync.1" class="lexicon_definition"></a>
+#### sync(env::LMDB.Environment) [¶](#method__sync.1)
 Flush the data buffers to disk
 
 *source:*
-[LMDB/src/env.jl:62](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L62)
+[LMDB/src/env.jl:67](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### sync(env::Environment, force::Bool)
+<a id="method__sync.2" class="lexicon_definition"></a>
+#### sync(env::LMDB.Environment,  force::Bool) [¶](#method__sync.2)
 Flush the data buffers to disk
 
 *source:*
-[LMDB/src/env.jl:62](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L62)
+[LMDB/src/env.jl:67](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### unset(env::Environment, flag::Uint32)
+<a id="method__unset.1" class="lexicon_definition"></a>
+#### unset!(env::LMDB.Environment,  flag::UInt32) [¶](#method__unset.1)
 Unset environment flags
 
 *source:*
-[LMDB/src/env.jl:70](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L70)
+[LMDB/src/env.jl:83](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### Cursor
+<a id="type__cursor.1" class="lexicon_definition"></a>
+#### LMDB.Cursor [¶](#type__cursor.1)
 A handle to a cursor structure for navigating through a database.
 
 
 *source:*
-[LMDB/src/cur.jl:4](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L4)
+[LMDB/src/cur.jl:4](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### DBI
+<a id="type__dbi.1" class="lexicon_definition"></a>
+#### LMDB.DBI [¶](#type__dbi.1)
 A handle for an individual database in the DB environment.
 
 
 *source:*
-[LMDB/src/dbi.jl:4](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L4)
+[LMDB/src/dbi.jl:4](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### Environment
+<a id="type__environment.1" class="lexicon_definition"></a>
+#### LMDB.Environment [¶](#type__environment.1)
 A DB environment supports multiple databases, all residing in the same shared-memory map.
 
 
 *source:*
-[LMDB/src/env.jl:4](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/env.jl#L4)
+[LMDB/src/env.jl:4](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
 
 ---
 
-### Transaction
+<a id="type__lmdberror.1" class="lexicon_definition"></a>
+#### LMDB.LMDBError [¶](#type__lmdberror.1)
+LMDB exception type
+
+*source:*
+[LMDB/src/common.jl:106](file:///home/art/.julia/v0.4/LMDB/src/common.jl)
+
+---
+
+<a id="type__transaction.1" class="lexicon_definition"></a>
+#### LMDB.Transaction [¶](#type__transaction.1)
 A database transaction. Every operation requires a transaction handle.
 All database operations require a transaction handle. Transactions may be read-only or read-write.
 
 
 *source:*
-[LMDB/src/txn.jl:5](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/txn.jl#L5)
+[LMDB/src/txn.jl:5](file:///home/art/.julia/v0.4/LMDB/src/txn.jl)
 
 ## Internal
+
 ---
 
-### errormsg(err::Int32)
+<a id="method__dbi.1" class="lexicon_definition"></a>
+#### dbi(cur::LMDB.Cursor) [¶](#method__dbi.1)
+Return the cursor's database
+
+*source:*
+[LMDB/src/cur.jl:58](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
+
+---
+
+<a id="method__errormsg.1" class="lexicon_definition"></a>
+#### errormsg(err::Int32) [¶](#method__errormsg.1)
 Return a string describing a given error code
 
 Function returns description of the error as a string. It accepts following arguments:
@@ -362,32 +495,53 @@ Function returns description of the error as a string. It accepts following argu
 
 
 *source:*
-[LMDB/src/common.jl:57](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/common.jl#L57)
+[LMDB/src/common.jl:100](file:///home/art/.julia/v0.4/LMDB/src/common.jl)
 
 ---
 
-### insert!(cur::Cursor, key, val)
-Store items into a database
+<a id="method__flags.1" class="lexicon_definition"></a>
+#### flags(txn::LMDB.Transaction,  dbi::LMDB.DBI) [¶](#method__flags.1)
+Retrieve the DB flags for a database handle
 
 *source:*
-[LMDB/src/cur.jl:54](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/cur.jl#L54)
+[LMDB/src/dbi.jl:46](file:///home/art/.julia/v0.4/LMDB/src/dbi.jl)
 
 ---
 
-### insert!(txn::Transaction, dbi::DBI, key, val)
-Store items into a database
+<a id="method__txn.1" class="lexicon_definition"></a>
+#### txn(cur::LMDB.Cursor) [¶](#method__txn.1)
+Return the cursor's transaction
 
 *source:*
-[LMDB/src/dbi.jl:62](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/dbi.jl#L62)
+[LMDB/src/cur.jl:51](file:///home/art/.julia/v0.4/LMDB/src/cur.jl)
 
 ---
 
-### version()
+<a id="method__version.1" class="lexicon_definition"></a>
+#### version() [¶](#method__version.1)
 Return the LMDB library version and version information
 
 Function returns tuple `(VersionNumber,String)` that contains a library version and a library version string.
 
 
 *source:*
-[LMDB/src/common.jl:44](https://github.com/wildart/LMDB.jl/tree/af071afae6696a6fe794bc70c3a5d2b79fa71f9a/src/common.jl#L44)
+[LMDB/src/common.jl:87](file:///home/art/.julia/v0.4/LMDB/src/common.jl)
+
+---
+
+<a id="type__environmentinfo.1" class="lexicon_definition"></a>
+#### LMDB.EnvironmentInfo [¶](#type__environmentinfo.1)
+Information about the environment
+
+*source:*
+[LMDB/src/env.jl:149](file:///home/art/.julia/v0.4/LMDB/src/env.jl)
+
+---
+
+<a id="type__mdbvalue.1" class="lexicon_definition"></a>
+#### LMDB.MDBValue [¶](#type__mdbvalue.1)
+Generic structure used for passing keys and data in and out of the database.
+
+*source:*
+[LMDB/src/common.jl:4](file:///home/art/.julia/v0.4/LMDB/src/common.jl)
 
