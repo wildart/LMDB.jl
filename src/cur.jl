@@ -19,6 +19,16 @@ function open(txn::Transaction, dbi::DBI)
     return Cursor(cur_ptr_ref[])
 end
 
+"Wrapper of Cursor `open` for `do` construct"
+function open(f::Function, txn::Transaction, dbi::DBI)
+    cur = open(txn, dbi)
+    try
+        f(cur)
+    finally
+        close(cur)
+    end
+end
+
 "Close a cursor"
 function close(cur::Cursor)
     if cur.handle == C_NULL
@@ -26,6 +36,7 @@ function close(cur::Cursor)
     end
     ccall((:mdb_cursor_close, liblmdb), Void, (Ptr{Void},), cur.handle)
     cur.handle = C_NULL
+    return
 end
 
 "Renew a cursor"
@@ -68,12 +79,12 @@ function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
     # Convert to proper type
     mdb_val = mdb_val_ref[]
     if T <: AbstractString
-        value = bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+        return bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     else
         nvals = floor(Int, mdb_val.size/sizeof(T))
         value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
+        return length(value) == 1 ? value[1] : value
     end
-    return length(value) == 1 ? value[1] : value
 end
 
 """Store by cursor.

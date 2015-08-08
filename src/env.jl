@@ -60,6 +60,7 @@ function close(env::Environment)
     ccall( (:mdb_env_close, liblmdb), Void, (Ptr{Void},), env.handle)
     env.handle = C_NULL
     env.path = ""
+    return
 end
 
 """Flush the data buffers to disk"""
@@ -165,8 +166,8 @@ function info(env::Environment)
 end
 
 function show(io::IO, env::Environment)
-    print(io,"Environment is ", isopen(env) ? "opened" : "closed")
-    if isopen(env)
+    print(io,"Environment is ", isopen(env) ? (isempty(env.path) ? "created" : "opened") : "closed")
+    if !isempty(env.path)
         print(io,"\nDB path: $(path(env))")
         ei = info(env)
         print(io,"\nSize of the data memory map: $(ei.mapsize)")

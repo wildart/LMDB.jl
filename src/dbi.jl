@@ -24,10 +24,11 @@ end
 "Wrapper of DBI `open` for `do` construct"
 function open(f::Function, txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
     dbi = open(txn, dbname, flags=flags)
+    tenv = env(txn)
     try
         f(dbi)
     finally
-        close(env(txn), dbi)
+        close(tenv, dbi)
     end
 end
 
@@ -38,6 +39,7 @@ function close(env::Environment, dbi::DBI)
     end
     ccall((:mdb_dbi_close, liblmdb), Void, (Ptr{Void}, Cuint), env.handle, dbi.handle)
     dbi.handle = zero(Cuint)
+    return
 end
 
 "Retrieve the DB flags for a database handle"
@@ -105,10 +107,10 @@ function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     # Convert to proper type
     mdb_val = mdb_val_ref[]
     if T <: AbstractString
-        value = bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+        return bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     else
         nvals = floor(Int, mdb_val.size/sizeof(T))
         value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
+        return length(value) == 1 ? value[1] : value
     end
-    return length(value) == 1 ? value[1] : value
 end

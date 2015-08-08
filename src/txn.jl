@@ -38,10 +38,9 @@ start(f::Function, env::Environment; flags::Cuint=zero(Cuint)) = f(start(env, fl
 The transaction and its cursors must not be used after, because its handle is freed.
 """
 function abort(txn::Transaction)
-    ret = ccall( (:mdb_txn_abort, liblmdb), Cint, (Ptr{Void},), txn.handle)
+    ccall( (:mdb_txn_abort, liblmdb), Void, (Ptr{Void},), txn.handle)
     txn.handle = C_NULL
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    return
 end
 
 """Commit all the operations of a transaction into the database
