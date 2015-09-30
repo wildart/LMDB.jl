@@ -1,50 +1,50 @@
 ### Working with the database
 
-First, an LMDB environment need to be created. `create` function creates `Environment` object that contains DB environment handle.
+First, an LMDB environment needs to be created. The `create` function creates an `Environment` object that contains a DB environment handle.
 ```julia
 env = create()
 ```
-Before opening the environment, you can be set its parameters.
-Environment parameters are set with `put!` function that accepts:
+Before opening the environment, you can set its parameters.
+Environment parameters are set with the `put!` function, which accepts:
 * `Environment` object
-* `option` symbol which indicates parameter, and
+* `option` symbol which indicates parameter name, and
 * parameter `value`.
 
 ```julia
 env[:DBs] = 2
 ```
 
-Environment parameters can be read with `get` function:
+Environment parameters can be read with the `get` function:
 ```julia
 env[:Readers]
 ```
 
-Next, the environment must be opened using `open` function that takes as parameter path to the directory where database files reside. Make sure that the database directory exists and is writable.
+Next, an environment must be opened using `open` function that takes as a parameter the path to the directory where database files reside. Make sure that the database directory exists and is writable.
 ```julia
 open(env, "./testdb")
 ```
 
-After opennig environment, create a transaction with `start` function. It creates a new transaction and return `Transaction` object.
+After opening the environment, create a transaction with the `start` function. It creates a new transaction and returns a `Transaction` object.
 ```julia
 txn = start(env)
 ```
 
-Next step, you need to open database using `open` function that takes the transanction as an argument.
+Next step, you need to open database using the `open` function, which takes the transaction as an argument.
 ```julia
 dbi = open(txn)
 ```
 
-Put key-value pair into the database with `put!` function:
+Put key-value pair into the database with the `put!` function:
 ```julia
 put!(txn, dbi, "key", "val")
 ```
 
-Commit all the operations of a transaction into the database. The transaction and its cursors must not be used after, because its handle is freed.
+Commit all the operations of a transaction into the database. The transaction and its cursors must not be used afterwards, because its handle has been freed.
 ```julia
 commit(txn)
 ```
 
-If you finished working with the database, close it with `close` call
+When you have finished working with the database, close it with a `close` call:
 ```julia
 close(env, dbi)
 ```
