@@ -44,10 +44,9 @@ end
 """
 function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
     env.path = path
-    cpath = bytestring(path)
     ret = ccall((:mdb_env_open, liblmdb), Cint,
                  (Ptr{Void}, Cstring, Cuint, Cmode_t),
-                  env.handle, cpath, flags, mode)
+                  env.handle, path, flags, mode)
     (ret != 0) && throw(LMDBError(ret))
     return ret::Cint
 end

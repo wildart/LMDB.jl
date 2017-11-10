@@ -12,7 +12,7 @@ isopen(dbi::DBI) = dbi.handle != zero(Cuint)
 
 "Open a database in the environment"
 function open(txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
-    cdbname = length(dbname) > 0 ? bytestring(dbname) : convert(Cstring, Ptr{UInt8}(C_NULL))
+    cdbname = length(dbname) > 0 ? dbname : convert(Cstring, Ptr{UInt8}(C_NULL))
     handle = Cuint[0]
     ret = ccall((:mdb_dbi_open, liblmdb), Cint,
                 (Ptr{Void}, Cstring, Cuint, Ptr{Cuint}),
@@ -107,7 +107,7 @@ function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     # Convert to proper type
     mdb_val = mdb_val_ref[]
     if T <: AbstractString
-        return bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+        return unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     else
         nvals = floor(Int, mdb_val.size/sizeof(T))
         value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)

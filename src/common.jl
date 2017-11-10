@@ -1,4 +1,4 @@
-typealias Cmode_t Cushort
+const Cmode_t = Cushort
 
 "Generic structure used for passing keys and data in and out of the database."
 type MDBValue
@@ -89,7 +89,7 @@ function version()
     minor = Cint[0]
     patch = Cint[0]
     ver_str = ccall( (:mdb_version, liblmdb), Cstring, (Ptr{Cint}, Ptr{Cint}, Ptr{Cint}), major, minor, patch)
-    return VersionNumber(major[1],minor[1],patch[1]), bytestring(ver_str)
+    return VersionNumber(major[1],minor[1],patch[1]), unsafe_string(ver_str)
 end
 
 """Return a string describing a given error code
@@ -99,7 +99,7 @@ Function returns description of the error as a string. It accepts following argu
 """
 function errormsg(err::Cint)
     errstr = ccall( (:mdb_strerror, liblmdb), Cstring, (Cint,), err)
-    return bytestring(errstr)
+    return unsafe_string(errstr)
 end
 
 """LMDB exception type"""
