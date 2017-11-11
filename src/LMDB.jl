@@ -4,7 +4,11 @@ module LMDB
     isdefined(:Docile) && eval(:(@document))
 
     import Base: open, close, getindex, setindex!, put!, start, reset,
-                 isopen, count, delete!, drop, info, get, show
+                 isopen, count, delete!, info, get, show
+
+    if VERSION < v"0.6.0"
+        import Base: drop
+    end
 
     depsfile = Pkg.dir("LMDB","deps","deps.jl")
     if isfile(depsfile)
