@@ -14,7 +14,7 @@ module LMDB_Common
     val = "abcd"
     mdb_val_ref = Ref(MDBValue(val))
     mdb_val = mdb_val_ref[]
-    @test val == bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+    @test val == unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
 
     val = [1233]
     T = eltype(val)
@@ -22,7 +22,7 @@ module LMDB_Common
     mdb_val = MDBValue(val[1])
     @test val_size == mdb_val.size
     nvals = floor(Int, mdb_val.size/sizeof(T))
-    value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
+    value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.data), nvals)
     @test val == value
 
     val = [0x0003, 0xff45]
@@ -31,6 +31,6 @@ module LMDB_Common
     mdb_val = MDBValue(val)
     @test val_size == mdb_val.size
     nvals = floor(Int, mdb_val.size/sizeof(T))
-    value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
+    value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.data), nvals)
     @test val == value
 end

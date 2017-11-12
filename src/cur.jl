@@ -79,7 +79,7 @@ function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
     # Convert to proper type
     mdb_val = mdb_val_ref[]
     if T <: AbstractString
-        return bytestring(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+        return unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     else
         nvals = floor(Int, mdb_val.size/sizeof(T))
         value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
