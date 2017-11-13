@@ -4,9 +4,10 @@ module LMDB
     isdefined(:Docile) && eval(:(@document))
 
     import Base: open, close, getindex, setindex!, put!, start, reset,
-                 isopen, count, delete!, drop, info, get, show
+                 isopen, count, delete!, info, get, show
+    import Base.Iterators: drop
 
-    depsfile = Pkg.dir("LMDB","deps","deps.jl")
+    depsfile = joinpath(dirname(@__FILE__),"..","deps","deps.jl")
     if isfile(depsfile)
         include(depsfile)
     else

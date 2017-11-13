@@ -11,7 +11,7 @@ end
 isopen(dbi::DBI) = dbi.handle != zero(Cuint)
 
 "Open a database in the environment"
-function open(txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
+function open(txn::Transaction, dbname::String = ""; flags::Cuint = zero(Cuint))
     cdbname = length(dbname) > 0 ? dbname : convert(Cstring, Ptr{UInt8}(C_NULL))
     handle = Cuint[0]
     ret = ccall((:mdb_dbi_open, liblmdb), Cint,
@@ -22,7 +22,7 @@ function open(txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
 end
 
 "Wrapper of DBI `open` for `do` construct"
-function open(f::Function, txn::Transaction, dbname::String = ""; flags::Cuint=zero(Cuint))
+function open(f::Function, txn::Transaction, dbname::String = ""; flags::Cuint = zero(Cuint))
     dbi = open(txn, dbname, flags=flags)
     tenv = env(txn)
     try
@@ -57,7 +57,7 @@ end
 If parameter `delete` is `false` DB will be emptied, otherwise
 DB will be deleted from the environment and DB handle will be closed
 """
-function drop(txn::Transaction, dbi::DBI; delete=false)
+function drop(txn::Transaction, dbi::DBI; delete = false)
     del = delete ? int32(1) : int32(0)
     ret = ccall((:mdb_drop, liblmdb), Cint,
                 (Ptr{Void}, Cuint, Cint),
@@ -67,7 +67,7 @@ function drop(txn::Transaction, dbi::DBI; delete=false)
 end
 
 "Store items into a database"
-function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint=zero(Cuint))
+function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue(val))
 
@@ -106,11 +106,13 @@ function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
 
     # Convert to proper type
     mdb_val = mdb_val_ref[]
-    if T <: AbstractString
+    if T <: String
         return unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+    elseif T <: AbstractVector
+        E = eltype(T)
+        nvals = floor(Int, mdb_val.size/sizeof(E))
+        return unsafe_wrap(T, convert(Ptr{E}, mdb_val.data), nvals)
     else
-        nvals = floor(Int, mdb_val.size/sizeof(T))
-        value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
-        return length(value) == 1 ? value[1] : value
+        return unsafe_load(convert(Ptr{T}, mdb_val.data))
     end
 end

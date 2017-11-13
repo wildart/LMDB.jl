@@ -82,7 +82,7 @@ end
 
 """Return the LMDB library version and version information
 
-Function returns tuple `(VersionNumber,String)` that contains a library version and a library version string.
+Function returns tuple `(VersionNumber, String)` that contains a library version and a library version string.
 """
 function version()
     major = Cint[0]
