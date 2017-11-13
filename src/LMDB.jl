@@ -10,7 +10,7 @@ module LMDB
         import Base: drop
     end
 
-    depsfile = Pkg.dir("LMDB","deps","deps.jl")
+    depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
     if isfile(depsfile)
         include(depsfile)
     else
