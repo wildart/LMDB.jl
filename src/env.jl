@@ -51,6 +51,17 @@ function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::Cm
     return ret::Cint
 end
 
+"Wrapper of `open` for `do` construct"
+function open(f::Function, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
+    env = create()
+    try
+        open(env, path)
+        f(env)
+    finally
+        close(env)
+    end
+end
+
 """Close the environment and release the memory map"""
 function close(env::Environment)
     if env.handle == C_NULL

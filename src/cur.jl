@@ -48,14 +48,14 @@ function renew(txn::Transaction, cur::Cursor)
 end
 
 "Return the cursor's transaction"
-function txn(cur::Cursor)
+function transaction(cur::Cursor)
     txn_ptr = ccall((:mdb_cursor_txn, liblmdb), Ptr{Void}, (Ptr{Void},), cur.handle)
     (txn_ptr == C_NULL) && return nothing
     return Transaction(txn_ptr)
 end
 
 "Return the cursor's database"
-function dbi(cur::Cursor)
+function database(cur::Cursor)
     dbi = ccall((:mdb_cursor_dbi, liblmdb), Cuint, (Ptr{Void},), cur.handle)
     (dbi == 0) && return nothing
     return DBI(dbi, "")
@@ -77,14 +77,7 @@ function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
     (ret != 0) && throw(LMDBError(ret))
 
     # Convert to proper type
-    mdb_val = mdb_val_ref[]
-    if T <: AbstractString
-        return unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
-    else
-        nvals = floor(Int, mdb_val.size/sizeof(T))
-        value = pointer_to_array(convert(Ptr{T}, mdb_val.data), nvals)
-        return length(value) == 1 ? value[1] : value
-    end
+    return convert(T, mdb_val_ref)
 end
 
 """Store by cursor.

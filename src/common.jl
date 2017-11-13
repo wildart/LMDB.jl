@@ -12,6 +12,18 @@ function MDBValue(val)
     return MDBValue(val_size, pointer(val))
 end
 
+function convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue})
+    mdb_val = mdb_val_ref[]
+    return if T <: String
+        unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+    elseif T <: AbstractVector
+        E = eltype(T)
+        nvals = floor(Int, mdb_val.size/sizeof(E))
+        unsafe_wrap(T, convert(Ptr{E}, mdb_val.data), nvals)
+    else
+        unsafe_load(convert(Ptr{T}, mdb_val.data))
+    end
+end
 
 # Environment Flags
 # -----------------
@@ -82,7 +94,7 @@ end
 
 """Return the LMDB library version and version information
 
-Function returns tuple `(VersionNumber,String)` that contains a library version and a library version string.
+Function returns tuple `(VersionNumber, String)` that contains a library version and a library version string.
 """
 function version()
     major = Cint[0]
