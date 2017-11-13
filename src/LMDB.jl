@@ -7,13 +7,12 @@ module LMDB
                  isopen, count, delete!, info, get, show, convert
     import Base.Iterators: drop
 
+    depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
     if isfile(depsfile)
         include(depsfile)
     else
         error("LMDB not properly installed. Please run Pkg.build(\"LMDB\")")
     end
-
-    depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 
     export Environment, create, open, close, sync, set!, unset!, getindex, setindex!, path, info, show,
            Transaction, start, abort, commit, reset, renew, environment,
