@@ -3,7 +3,7 @@ module LMDB_Common
     using Base.Test
     import LMDB.MDBValue
 
-    @test LMDB.version()[1] == v"0.9.15"
+    @test LMDB.version()[1] >= v"0.9.15"
 
     # LMDBError
     ex = LMDBError(Cint(0))
