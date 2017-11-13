@@ -33,6 +33,24 @@ module LMDB_CUR
     end
     @test !isopen(env)
 
+    # Block style
+    open(dbname) do env # open environment
+        start(env) do txn # start transaction
+            open(txn) do dbi # open database
+                open(txn, dbi) do cur # open cursor
+                    curtxn = transaction(cur)
+                    @test curtxn.handle == txn.handle
+                    curdbi = database(cur)
+                    @test curdbi.handle == dbi.handle
+                    v = get(cur, key, String)
+                    println("Got value for key $(key): $(v)")
+                    @test val*string(key) == v
+                end
+            end
+            commit(txn)
+        end
+    end
+
     # Remove db dir
     rm(dbname, recursive=true)
 end

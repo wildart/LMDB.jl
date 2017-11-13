@@ -105,14 +105,5 @@ function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     (ret != 0) && throw(LMDBError(ret))
 
     # Convert to proper type
-    mdb_val = mdb_val_ref[]
-    if T <: String
-        return unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
-    elseif T <: AbstractVector
-        E = eltype(T)
-        nvals = floor(Int, mdb_val.size/sizeof(E))
-        return unsafe_wrap(T, convert(Ptr{E}, mdb_val.data), nvals)
-    else
-        return unsafe_load(convert(Ptr{T}, mdb_val.data))
-    end
+    return convert(T, mdb_val_ref)
 end
