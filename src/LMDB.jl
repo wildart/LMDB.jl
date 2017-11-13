@@ -7,7 +7,7 @@ module LMDB
                  isopen, count, delete!, info, get, show, convert
     import Base.Iterators: drop
 
-    depsfile = joinpath(dirname(@__FILE__),"..","deps","deps.jl")
+    depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
     if isfile(depsfile)
         include(depsfile)
     else

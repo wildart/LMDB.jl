@@ -40,6 +40,7 @@ module LMDB_DBI
                     value = get(txn, dbi, k, String)
                     println("Got value for key $(k): $(value)")
                     @test value == val*string(k)
+                    delete!(txn, dbi, k)
                     k += 1
                     value = get(txn, dbi, k, String)
                     println("Got value for key $(k): $(value)")

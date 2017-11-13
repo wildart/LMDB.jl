@@ -80,9 +80,9 @@ function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
 end
 
 "Delete items from a database"
-function delete!(txn::Transaction, dbi::DBI, key, val)
+function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
     mdb_key_ref = Ref(MDBValue(key))
-    mdb_val_ref = Ref(MDBValue(val))
+    mdb_val_ref = (val === C_NULL) ? C_NULL : Ref(MDBValue(val))
 
     ret = ccall((:mdb_del, liblmdb), Cint,
                 (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
