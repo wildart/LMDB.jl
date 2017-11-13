@@ -13,6 +13,8 @@ module LMDB
         error("LMDB not properly installed. Please run Pkg.build(\"LMDB\")")
     end
 
+    depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+
     export Environment, create, open, close, sync, set!, unset!, getindex, setindex!, path, info, show,
            Transaction, start, abort, commit, reset, renew, environment,
            DBI, drop, delete!, get, put!,
