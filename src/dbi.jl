@@ -1,7 +1,7 @@
 """
 A handle for an individual database in the DB environment.
 """
-type DBI
+mutable struct DBI
     handle::Cuint
     name::String
     DBI(dbi::Cuint, name::String) = new(dbi, name)
@@ -93,7 +93,7 @@ function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
 end
 
 "Get items from a database"
-function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
+function get(txn::Transaction, dbi::DBI, key, ::Type{T}) where T
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue())

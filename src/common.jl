@@ -1,7 +1,7 @@
 const Cmode_t = Cushort
 
 "Generic structure used for passing keys and data in and out of the database."
-type MDBValue
+struct MDBValue
     size::Csize_t   # size of the data item
     data::Ptr{Void} # address of the data item
 end
@@ -12,7 +12,7 @@ function MDBValue(val)
     return MDBValue(val_size, pointer(val))
 end
 
-function convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue})
+function convert(::Type{T}, mdb_val_ref::Ref{MDBValue}) where T
     mdb_val = mdb_val_ref[]
     return if T <: String
         unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
@@ -115,12 +115,12 @@ function errormsg(err::Cint)
 end
 
 """LMDB exception type"""
-immutable LMDBError <: Exception
+struct LMDBError <: Exception
     code::Cint
     msg::AbstractString
     LMDBError(code::Cint) = new(code, errormsg(code))
 end
-Base.show(io::IO, err::LMDBError) = print(io, "Code[$(err.code)]: $(err.msg)")
+show(io::IO, err::LMDBError) = print(io, "Code[$(err.code)]: $(err.msg)")
 
 """ Check if binary flag is set in provided value"""
 isflagset(value, flag) = (value & flag) == flag

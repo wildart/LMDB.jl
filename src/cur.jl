@@ -1,7 +1,7 @@
 """
 A handle to a cursor structure for navigating through a database.
 """
-type Cursor
+mutable struct Cursor
     handle::Ptr{Void}
     Cursor(cur::Ptr{Void}) = new(cur)
 end
@@ -65,7 +65,7 @@ end
 
 This function retrieves key/data pairs from the database.
 """
-function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
+function get(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST) where T
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue())

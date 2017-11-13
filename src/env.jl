@@ -1,7 +1,7 @@
 """
 A DB environment supports multiple databases, all residing in the same shared-memory map.
 """
-type Environment
+mutable struct Environment
     handle::Ptr{Void}
     path::String
     Environment() = new(C_NULL, "")
@@ -156,7 +156,7 @@ function getindex(env::Environment, option::Symbol)
 end
 
 """Information about the environment"""
-immutable EnvironmentInfo
+struct EnvironmentInfo
     mapaddr::Ptr{Void}
     mapsize::Csize_t     # Size of the data memory map
     last_pgno::Csize_t   # ID of the last used page

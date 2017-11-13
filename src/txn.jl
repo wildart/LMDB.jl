@@ -2,7 +2,7 @@
 A database transaction. Every operation requires a transaction handle.
 All database operations require a transaction handle. Transactions may be read-only or read-write.
 """
-type Transaction
+mutable struct Transaction
     handle::Ptr{Void}
     Transaction() = new(C_NULL)
     Transaction(h::Ptr{Void}) = new(h)

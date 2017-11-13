@@ -4,7 +4,7 @@ module LMDB
     isdefined(:Docile) && eval(:(@document))
 
     import Base: open, close, getindex, setindex!, put!, start, reset,
-                 isopen, count, delete!, info, get, show, convert
+                 isopen, count, delete!, info, get, show, convert, show
     import Base.Iterators: drop
 
     depsfile = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
