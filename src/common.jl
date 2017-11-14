@@ -8,17 +8,24 @@ end
 MDBValue() = MDBValue(zero(Csize_t), C_NULL)
 MDBValue(_::Void) = MDBValue()
 MDBValue{T<:Union{String,Array}}(val::T) = MDBValue(sizeof(val), pointer(val))
-MDBValue{T<:Number}(val::T) = error("can not wrap a $T in MDBValue, use a $T array instead")
-MDBValue(val) = MDBValue(sizeof(val), pointer_from_objref(val))
+function MDBValue{T}(val::T)
+    if isbits(T)
+        error("Can not wrap a $T in MDBValue. Use a $T array instead")
+    else
+        error("Can not wrap a $T in MDBValue. $T is not bits type")
+    end
+end
+ismdbvalue{T}(_::T) = (T <: String) || (T <: Array)
 
 convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue}) = _convert(T, mdb_val_ref[])
 _convert(::Type{String}, mdb_val::MDBValue) = unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
 function _convert{T}(::Type{Vector{T}}, mdb_val::MDBValue)
     nvals = floor(Int, mdb_val.size/sizeof(T))
-    unsafe_wrap(Array, convert(Ptr{T}, mdb_val.data), nvals)
+    UnalignedVector{T}(unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size))
 end
-_convert{T<:Number}(::Type{T}, mdb_val::MDBValue) = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.data), 1)[1]
-_convert{T}(::Type{T}, mdb_val::MDBValue) = unsafe_load(convert(Ptr{T}, mdb_val.data), 1)
+function _convert{T}(::Type{T}, mdb_val::MDBValue)
+    UnalignedVector{T}(unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size))[1]
+end
 
 # Environment Flags
 # -----------------

@@ -15,6 +15,7 @@ module LMDB_DBI
             ,110                => "key value is 10"
             ,211                => [MyType(10,true), MyType(11,false)]
             ,210                => [11, 12, 13]
+            ,212                => MyType(12,true)
         ]
         ,[
             "311-str"          => 11
@@ -22,6 +23,9 @@ module LMDB_DBI
         ]
         ,[
             MyType(10, true)   => MyType(11, false)
+        ]
+        ,[
+            [MyType(10, true)]   => MyType(11, false)
         ]
     ]
 

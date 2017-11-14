@@ -68,9 +68,9 @@ end
 
 "Store items into a database"
 function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
-    if isa(key, Number) || isa(val, Number)
-        key = isa(key, Number) ? [key] : key
-        val = isa(val, Number) ? [val] : val
+    if !ismdbvalue(key) || !ismdbvalue(val)
+        key = ismdbvalue(key) ? key : [key]
+        val = ismdbvalue(val) ? val : [val]
         return put!(txn, dbi, key, val; flags=flags)
     end
 
@@ -87,9 +87,9 @@ end
 
 "Delete items from a database"
 function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
-    if isa(key, Number) || isa(val, Number)
-        key = isa(key, Number) ? [key] : key
-        val = isa(val, Number) ? [val] : val
+    if !ismdbvalue(key) || !ismdbvalue(val)
+        key = ismdbvalue(key) ? key : [key]
+        val = ismdbvalue(val) ? val : [val]
         return delete!(txn, dbi, key, val)
     end
 
@@ -105,8 +105,8 @@ function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
 end
 
 "Get items from a database. Returned values are safe to access as long as the transaction is not closed."
-get{K<:Number,T}(txn::Transaction, dbi::DBI, key::K, ::Type{T}) = get(txn, dbi, [key], T)
-function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
+get{K,T}(txn::Transaction, dbi::DBI, key::K, ::Type{T}) = get(txn, dbi, [key], T)
+function get{K<:Union{String,Array},T}(txn::Transaction, dbi::DBI, key::K, ::Type{T})
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue())

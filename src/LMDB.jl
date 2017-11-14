@@ -1,5 +1,6 @@
 __precompile__(true)
 module LMDB
+    using UnalignedVectors
 
     isdefined(:Docile) && eval(:(@document))
 

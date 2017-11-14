@@ -65,8 +65,8 @@ end
 
 This function retrieves key/data pairs from the database.
 """
-get{K<:Number,T}(cur::Cursor, key::K, ::Type{T}) = get(cur, [key], T)
-function get{T}(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST)
+get{K,T}(cur::Cursor, key::K, ::Type{T}, op::CursorOps=FIRST) = get(cur, [key], T)
+function get{K<:Union{String,Array},T}(cur::Cursor, key::K, ::Type{T}, op::CursorOps=FIRST)
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue())
@@ -86,9 +86,9 @@ end
 This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
 """
 function put!(cur::Cursor, key, val; flags::Cuint = zero(Cuint))
-    if isa(key, Number) || isa(val, Number)
-        key = isa(key, Number) ? [key] : key
-        val = isa(val, Number) ? [val] : val
+    if !ismdbvalue(key) || !ismdbvalue(val)
+        key = ismdbvalue(key) ? key : [key]
+        val = ismdbvalue(val) ? val : [val]
         return put!(cur, key, val; flags=flags)
     end
 
