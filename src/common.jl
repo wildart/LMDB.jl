@@ -126,3 +126,8 @@ Base.show(io::IO, err::LMDBError) = print(io, "Code[$(err.code)]: $(err.msg)")
 
 """ Check if binary flag is set in provided value"""
 isflagset(value, flag) = (value & flag) == flag
+
+"""LMDB path"""
+immutable LMDBPath
+    path::String
+end

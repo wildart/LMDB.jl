@@ -20,7 +20,7 @@ module LMDB
            DBI, drop, delete!, get, put!,
            Cursor, count, transaction, database,
            isflagset, isopen,
-           LMDBError, CursorOps
+           LMDBError, CursorOps, LMDBPath
 
     include("common.jl")
     include("env.jl")
