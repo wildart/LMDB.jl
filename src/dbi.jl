@@ -68,6 +68,12 @@ end
 
 "Store items into a database"
 function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
+    if isa(key, Number) || isa(val, Number)
+        key = isa(key, Number) ? [key] : key
+        val = isa(val, Number) ? [val] : val
+        return put!(txn, dbi, key, val; flags=flags)
+    end
+
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = Ref(MDBValue(val))
 
@@ -81,6 +87,12 @@ end
 
 "Delete items from a database"
 function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
+    if isa(key, Number) || isa(val, Number)
+        key = isa(key, Number) ? [key] : key
+        val = isa(val, Number) ? [val] : val
+        return delete!(txn, dbi, key, val)
+    end
+
     mdb_key_ref = Ref(MDBValue(key))
     mdb_val_ref = (val === C_NULL) ? C_NULL : Ref(MDBValue(val))
 
@@ -92,7 +104,8 @@ function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
     return ret
 end
 
-"Get items from a database"
+"Get items from a database. Returned values are safe to access as long as the transaction is not closed."
+get{K<:Number,T}(txn::Transaction, dbi::DBI, key::K, ::Type{T}) = get(txn, dbi, [key], T)
 function get{T}(txn::Transaction, dbi::DBI, key, ::Type{T})
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(key))

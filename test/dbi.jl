@@ -3,23 +3,39 @@ module LMDB_DBI
     using Base.Test
 
     const dbname = "testdb"
-    key = 10
-    val = "key value is "
 
-    # Create dir
-    mkdir(dbname)
-    try
+    immutable MyType
+        intval::Int
+        boolval::Bool
+    end
 
-        # Procedural style
+    const TEST_SETS = [
+        [
+             111                => "key value is 11"
+            ,110                => "key value is 10"
+            ,211                => [MyType(10,true), MyType(11,false)]
+            ,210                => [11, 12, 13]
+        ]
+        ,[
+            "311-str"          => 11
+            ,"310-str"          => 10
+        ]
+        ,[
+            MyType(10, true)   => MyType(11, false)
+        ]
+    ]
+
+    function put_kvpairs(test_pairs)
         env = create()
         try
             open(env, dbname)
             txn = start(env)
             dbi = open(txn)
-            put!(txn, dbi, key+1, val*string(key+1))
-            put!(txn, dbi, key, val*string(key))
-            put!(txn, dbi, key+2, key+2)
-            put!(txn, dbi, key+3, [key, key+1, key+2])
+            for (key,val) in test_pairs
+                put!(txn, dbi, key, val)
+                println("    put $(key) => $(val)")
+            end
+
             @test isopen(txn)
             commit(txn)
             @test !isopen(txn)
@@ -29,36 +45,33 @@ module LMDB_DBI
             close(env)
         end
         @test !isopen(env)
+    end
 
-        # Block style
+    function get_compare_delete(test_pairs)
         create() do env
             set!(env, LMDB.NOSYNC)
             open(env, dbname)
             start(env) do txn
                 open(txn, flags = Cuint(LMDB.REVERSEKEY)) do dbi
-                    k = key
-                    value = get(txn, dbi, k, String)
-                    println("Got value for key $(k): $(value)")
-                    @test value == val*string(k)
-                    delete!(txn, dbi, k)
-                    k += 1
-                    value = get(txn, dbi, k, String)
-                    println("Got value for key $(k): $(value)")
-                    @test value == val*string(k)
-                    delete!(txn, dbi, k, value)
-                    @test_throws LMDBError get(txn, dbi, k, String)
-                    k += 1
-                    value = get(txn, dbi, k, Int)
-                    println("Got value for key $(k): $(value)")
-                    @test value == k
-                    k += 1
-                    value = get(txn, dbi, k, Vector{Int})
-                    println("Got value for key $(k): $(value)")
-                    @test value == [key, key+1, key+2]
+                    for (key, val) in test_pairs
+                        value = get(txn, dbi, key, typeof(val))
+                        println("    got $(key) => $(value)")
+                        @test value == val
+                        delete!(txn, dbi, key)
+                        @test_throws LMDBError get(txn, dbi, key, typeof(val))
+                    end
                 end
             end
         end
-    finally
-        rm(dbname, recursive=true)
+    end
+
+    for test_pairs in TEST_SETS
+        mkdir(dbname)
+        try
+            put_kvpairs(test_pairs)
+            get_compare_delete(test_pairs)
+        finally
+            rm(dbname, recursive=true)
+        end
     end
 end

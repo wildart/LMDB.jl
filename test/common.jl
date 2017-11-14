@@ -19,7 +19,7 @@ module LMDB_Common
     val = [1233]
     T = eltype(val)
     val_size = sizeof(val)
-    mdb_val = MDBValue(val[1])
+    mdb_val = MDBValue(val)
     @test val_size == mdb_val.size
     nvals = floor(Int, mdb_val.size/sizeof(T))
     value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.data), nvals)
