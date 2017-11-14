@@ -1,28 +1,30 @@
 const Cmode_t = Cushort
 
 "Generic structure used for passing keys and data in and out of the database."
-type MDBValue
+immutable MDBValue
     size::Csize_t   # size of the data item
     data::Ptr{Void} # address of the data item
 end
 MDBValue() = MDBValue(zero(Csize_t), C_NULL)
-function MDBValue(val)
-    val_size = sizeof(val)
-    val = isa(val, Number) ? typeof(val)[val] : val
-    return MDBValue(val_size, pointer(val))
-end
-
-function convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue})
-    mdb_val = mdb_val_ref[]
-    return if T <: String
-        unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
-    elseif T <: AbstractVector
-        E = eltype(T)
-        nvals = floor(Int, mdb_val.size/sizeof(E))
-        unsafe_wrap(T, convert(Ptr{E}, mdb_val.data), nvals)
+MDBValue(_::Void) = MDBValue()
+MDBValue{T<:Union{String,Array}}(val::T) = MDBValue(sizeof(val), pointer(val))
+function MDBValue{T}(val::T)
+    if isbits(T)
+        error("Can not wrap a $T in MDBValue. Use a $T array instead")
     else
-        unsafe_load(convert(Ptr{T}, mdb_val.data))
+        error("Can not wrap a $T in MDBValue. $T is not bits type")
     end
+end
+ismdbvalue{T}(_::T) = (T <: String) || (T <: Array)
+
+convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue}) = _convert(T, mdb_val_ref[])
+_convert(::Type{String}, mdb_val::MDBValue) = unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+function _convert{T}(::Type{Vector{T}}, mdb_val::MDBValue)
+    nvals = floor(Int, mdb_val.size/sizeof(T))
+    UnalignedVector{T}(unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size))
+end
+function _convert{T}(::Type{T}, mdb_val::MDBValue)
+    UnalignedVector{T}(unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size))[1]
 end
 
 # Environment Flags
@@ -117,10 +119,15 @@ end
 """LMDB exception type"""
 immutable LMDBError <: Exception
     code::Cint
-    msg::AbstractString
-    LMDBError(code::Cint) = new(code, errormsg(code))
+    msg::String
 end
+LMDBError(code::Cint) = LMDBError(code, errormsg(code))
 Base.show(io::IO, err::LMDBError) = print(io, "Code[$(err.code)]: $(err.msg)")
 
 """ Check if binary flag is set in provided value"""
 isflagset(value, flag) = (value & flag) == flag
+
+"""LMDB path"""
+immutable LMDBPath
+    path::String
+end

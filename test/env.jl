@@ -10,6 +10,9 @@ module LMDB_Env
     @test env[:Readers] == 126
     @test env[:KeySize] == 511
     @test env[:Flags] == 0
+    @test path(env) == ""
+
+    show(STDOUT, env)
 
     # Manipulate flags
     @test !isflagset(env[:Flags], Cuint(LMDB.NOSYNC))
@@ -30,9 +33,12 @@ module LMDB_Env
         ret = open(env, dbname)
         @test ret[1] == 0
 
+        @show env
+
         # Close environment
         close(env)
         @test !isopen(env)
+        @test_throws LMDBError close(env)
 
         # do block
         create() do env
