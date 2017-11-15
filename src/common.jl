@@ -5,24 +5,27 @@ struct MDBValue
     size::Csize_t   # size of the data item
     data::Ptr{Void} # address of the data item
 end
+
 MDBValue() = MDBValue(zero(Csize_t), C_NULL)
-function MDBValue(val)
-    val_size = sizeof(val)
-    val = isa(val, Number) ? typeof(val)[val] : val
+MDBValue(_::Void) = MDBValue()
+# MDBValue(val::String) = MDBValue(sizeof(eltype(val))*length(val), pointer(val))
+function MDBValue(val::T) where {T}
+    isbits(T) && error("Can not wrap a $T in MDBValue. Use a $T array instead")
+    val_size = sizeof(eltype(val))*length(val)
     return MDBValue(val_size, pointer(val))
 end
 
-function convert(::Type{T}, mdb_val_ref::Ref{MDBValue}) where T
-    mdb_val = mdb_val_ref[]
-    return if T <: String
-        unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
-    elseif T <: AbstractVector
-        E = eltype(T)
-        nvals = floor(Int, mdb_val.size/sizeof(E))
-        unsafe_wrap(T, convert(Ptr{E}, mdb_val.data), nvals)
-    else
-        unsafe_load(convert(Ptr{T}, mdb_val.data))
-    end
+convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue}) = _convert(T, mdb_val_ref[])
+function _convert(::Type{String}, mdb_val::MDBValue)
+    nvals = floor(Int, mdb_val.size/sizeof(Char))
+    unsafe_string(convert(Ptr{UInt8}, mdb_val.data), nvals)
+end
+function _convert{T}(::Type{Vector{T}}, mdb_val::MDBValue)
+    res = unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
+    reinterpret(T,res)
+end
+function _convert{T}(::Type{T}, mdb_val::MDBValue)
+    unsafe_load(convert(Ptr{T}, mdb_val.data))
 end
 
 # Environment Flags

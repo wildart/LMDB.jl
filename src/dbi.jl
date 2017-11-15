@@ -68,8 +68,10 @@ end
 
 "Store items into a database"
 function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
-    mdb_key_ref = Ref(MDBValue(key))
-    mdb_val_ref = Ref(MDBValue(val))
+    k = isbits(typeof(key)) ? [key] :  key
+    mdb_key_ref = Ref(MDBValue(k))
+    v = isbits(typeof(val)) ? [val] :  val
+    mdb_val_ref = Ref(MDBValue(v))
 
     ret = ccall((:mdb_put, liblmdb), Cint,
                 (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
@@ -81,8 +83,10 @@ end
 
 "Delete items from a database"
 function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
-    mdb_key_ref = Ref(MDBValue(key))
-    mdb_val_ref = (val === C_NULL) ? C_NULL : Ref(MDBValue(val))
+    k = isbits(typeof(key)) ? [key] : key
+    mdb_key_ref = Ref(MDBValue(k))
+    v = isbits(typeof(val)) ? [val] : val
+    mdb_val_ref = Ref((val === C_NULL) ? MDBValue() : MDBValue(v))
 
     ret = ccall((:mdb_del, liblmdb), Cint,
                 (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
@@ -95,7 +99,8 @@ end
 "Get items from a database"
 function get(txn::Transaction, dbi::DBI, key, ::Type{T}) where T
     # Setup parameters
-    mdb_key_ref = Ref(MDBValue(key))
+    k = isbits(typeof(key)) ? [key] :  key
+    mdb_key_ref = Ref(MDBValue(k))
     mdb_val_ref = Ref(MDBValue())
 
     # Get value

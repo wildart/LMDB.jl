@@ -34,7 +34,7 @@ module LMDB_CUR
     @test !isopen(env)
 
     # Block style
-    open(dbname) do env # open environment
+    environment(dbname) do env # open environment
         start(env) do txn # start transaction
             open(txn) do dbi # open database
                 open(txn, dbi) do cur # open cursor

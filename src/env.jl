@@ -52,7 +52,7 @@ function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::Cm
 end
 
 "Wrapper of `open` for `do` construct"
-function open(f::Function, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
+function environment(f::Function, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
     env = create()
     try
         open(env, path)
