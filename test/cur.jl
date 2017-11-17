@@ -47,7 +47,7 @@ module LMDB_CUR
                     @test val*string(key) == v
                 end
             end
-            commit(txn)
+            abort(txn)
         end
     end
 

@@ -65,7 +65,7 @@ end
 
 This function retrieves key/data pairs from the database.
 """
-function get(cur::Cursor, key, ::Type{T}, op::CursorOps=FIRST) where T
+function get(cur::Cursor, key, ::Type{T}, op::CursorOps=SET_KEY) where T
     # Setup parameters
     k = isbits(typeof(key)) ? [key] :  key
     mdb_key_ref = Ref(MDBValue(k))

@@ -56,6 +56,7 @@ module LMDB_DBI
                     println("Got value for key $(k): $(value)")
                     @test value == [key, key+1, key+2]
                 end
+                abort(txn)
             end
         end
     finally

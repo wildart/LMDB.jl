@@ -8,7 +8,7 @@ end
 
 MDBValue() = MDBValue(zero(Csize_t), C_NULL)
 MDBValue(_::Void) = MDBValue()
-# MDBValue(val::String) = MDBValue(sizeof(eltype(val))*length(val), pointer(val))
+MDBValue(val::String) = MDBValue(sizeof(val), pointer(val))
 function MDBValue(val::T) where {T}
     isbits(T) && error("Can not wrap a $T in MDBValue. Use a $T array instead")
     val_size = sizeof(eltype(val))*length(val)
@@ -17,8 +17,7 @@ end
 
 convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue}) = _convert(T, mdb_val_ref[])
 function _convert(::Type{String}, mdb_val::MDBValue)
-    nvals = floor(Int, mdb_val.size/sizeof(Char))
-    unsafe_string(convert(Ptr{UInt8}, mdb_val.data), nvals)
+    unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
 end
 function _convert{T}(::Type{Vector{T}}, mdb_val::MDBValue)
     res = unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
@@ -31,6 +30,7 @@ end
 # Environment Flags
 # -----------------
 @enum(EnvironmentFlags,
+      EMPTY      = 0x00000000, # no flags
       FIXEDMAP   = 0x00000001, # mmap at a fixed address
       NOSUBDIR   = 0x00004000, # no environment directory
       NOSYNC     = 0x00010000, # don't fsync after commit
@@ -41,7 +41,7 @@ end
       NOTLS      = 0x00200000, # tie reader locktable slots to #MDB_txn objects instead of to threads
       NOLOCK     = 0x00400000, # don't do any locking, caller must manage their own locks
       NORDAHEAD  = 0x00800000, # don't do readahead (no effect on Windows)
-      NOMEMINIT  = 0x01000000 # don't initialize malloc'd memory before writing to datafile
+      NOMEMINIT  = 0x01000000  # don't initialize malloc'd memory before writing to datafile
 )
 
 # Database Flags
@@ -53,7 +53,7 @@ end
       DUPFIXED   = 0x00000010, # with MDB_DUPSORT, sorted dup items have fixed size
       INTEGERDUP = 0x00000020, # with MDB_DUPSORT, dups are numeric in native byte order
       REVERSEDUP = 0x00000040, # with #MDB_DUPSORT, use reverse string dups
-      CREATE     = 0x00040000 # create DB if not already existing
+      CREATE     = 0x00040000  # create DB if not already existing
 )
 
 # Write Flags
@@ -63,13 +63,13 @@ end
 #= Only for #MDB_DUPSORT
  * For put: don't write if the key and data pair already exist.
  * For mdb_cursor_del: remove all duplicate data items.
- =#
+=#
       NODUPDATA = 0x00000020,
       CURRENT   = 0x00000040, # For mdb_cursor_put: overwrite the current key/data pair
       RESERVE   = 0x00010000, # For put: Just reserve space for data, don't copy it. Return a pointer to the reserved space.
       APPEND    = 0x00020000, # Data is being appended, don't split full pages.
       APPENDDUP = 0x00040000, # Duplicate data is being appended, don't split full pages.
-      MULTIPLE  = 0x00080000 # Store multiple data items in one call. Only for DUPFIXED.
+      MULTIPLE  = 0x00080000  # Store multiple data items in one call. Only for DUPFIXED.
 )
 
 # Cursor `get` operations

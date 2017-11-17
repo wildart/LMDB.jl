@@ -31,7 +31,8 @@ function start(env::Environment; flags::Cuint=zero(Cuint),
     (ret != 0) && throw(LMDBError(ret))
     return Transaction(txn_ref[])
 end
-start(f::Function, env::Environment; flags::Cuint=zero(Cuint)) = f(start(env, flags=flags))
+start(f::Function, env::Environment; flags::EnvironmentFlags=EMPTY) = f(start(env, flags=Cuint(flags)))
+
 
 """Abandon all the operations of the transaction instead of saving them
 
