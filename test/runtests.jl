@@ -1,6 +1,6 @@
-tests = ["common", "env", "dbi", "cur"]
+using Base.Test
 
-for t in tests
+@testset "LMDB" for t in ["common", "env", "dbi", "cur"]
     fp = "$t.jl"
     println("* running $fp ...")
     include(fp)
