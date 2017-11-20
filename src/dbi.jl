@@ -58,7 +58,7 @@ If parameter `delete` is `false` DB will be emptied, otherwise
 DB will be deleted from the environment and DB handle will be closed
 """
 function drop(txn::Transaction, dbi::DBI; delete = false)
-    del = delete ? int32(1) : int32(0)
+    del = delete ? Int32(1) : Int32(0)
     ret = ccall((:mdb_drop, liblmdb), Cint,
                 (Ptr{Void}, Cuint, Cint),
                  txn.handle, dbi.handle, del)
