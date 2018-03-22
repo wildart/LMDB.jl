@@ -3,11 +3,11 @@ const Cmode_t = Cushort
 "Generic structure used for passing keys and data in and out of the database."
 struct MDBValue
     size::Csize_t   # size of the data item
-    data::Ptr{Void} # address of the data item
+    data::Ptr{Nothing} # address of the data item
 end
 
 MDBValue() = MDBValue(zero(Csize_t), C_NULL)
-MDBValue(_::Void) = MDBValue()
+MDBValue(_::Nothing) = MDBValue()
 MDBValue(val::String) = MDBValue(sizeof(val), pointer(val))
 function MDBValue(val::T) where {T}
     isbits(T) && error("Can not wrap a $T in MDBValue. Use a $T array instead")
@@ -15,15 +15,15 @@ function MDBValue(val::T) where {T}
     return MDBValue(val_size, pointer(val))
 end
 
-convert{T}(::Type{T}, mdb_val_ref::Ref{MDBValue}) = _convert(T, mdb_val_ref[])
+convert(::Type{T}, mdb_val_ref::Ref{MDBValue}) where {T} = _convert(T, mdb_val_ref[])
 function _convert(::Type{String}, mdb_val::MDBValue)
     unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
 end
-function _convert{T}(::Type{Vector{T}}, mdb_val::MDBValue)
+function _convert(::Type{Vector{T}}, mdb_val::MDBValue) where {T}
     res = unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
     reinterpret(T,res)
 end
-function _convert{T}(::Type{T}, mdb_val::MDBValue)
+function _convert(::Type{T}, mdb_val::MDBValue) where {T}
     unsafe_load(convert(Ptr{T}, mdb_val.data))
 end
 
