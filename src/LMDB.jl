@@ -1,7 +1,7 @@
 __precompile__(true)
 module LMDB
 
-    using Nullables, Compat
+    using Compat
 
     if VERSION.minor < 7
         isdefined(:Docile) && eval(:(@document))

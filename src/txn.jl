@@ -23,11 +23,11 @@ isopen(txn::Transaction) = txn.handle != C_NULL
 It allows to set transaction flags with `flags` option.
 """
 function start(env::Environment; flags::Cuint=zero(Cuint),
-               parent::Nullable{Transaction} = Nullable{Transaction}())
+               parent::Union{Transaction,Nothing} = nothing)
     txn_ref = Ref{Ptr{Nothing}}(C_NULL)
     ret = ccall( (:mdb_txn_begin, liblmdb), Cint,
                   (Ptr{Nothing}, Ptr{Nothing}, Cuint, Ptr{Ptr{Nothing}}),
-                   env.handle, get(parent, Transaction()).handle,  flags, txn_ref)
+                   env.handle, parent != nothing ? parent.handle : Transaction().handle,  flags, txn_ref)
     (ret != 0) && throw(LMDBError(ret))
     return Transaction(txn_ref[])
 end
