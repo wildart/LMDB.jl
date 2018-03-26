@@ -1,7 +1,13 @@
 __precompile__(true)
 module LMDB
 
-    isdefined(:Docile) && eval(:(@document))
+    using Compat
+
+    if VERSION.minor < 7
+        isdefined(:Docile) && eval(:(@document))
+    else
+        eval(:(@isdefined(Docile) && eval(:(@document))))
+    end
 
     import Base: open, close, getindex, setindex!, put!, start, reset,
                  isopen, count, delete!, info, get, show, convert, show

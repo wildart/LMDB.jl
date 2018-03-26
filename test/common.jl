@@ -1,6 +1,11 @@
 module LMDB_Common
     using LMDB
-    using Base.Test
+    if VERSION.minor < 7
+        using Base.Test
+    else
+        using Test
+    end
+
     import LMDB.MDBValue
 
     @test LMDB.version()[1] >= v"0.9.15"

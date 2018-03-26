@@ -15,7 +15,7 @@ function open(txn::Transaction, dbname::String = ""; flags::Cuint = zero(Cuint))
     cdbname = length(dbname) > 0 ? dbname : convert(Cstring, Ptr{UInt8}(C_NULL))
     handle = Cuint[0]
     ret = ccall((:mdb_dbi_open, liblmdb), Cint,
-                (Ptr{Void}, Cstring, Cuint, Ptr{Cuint}),
+                (Ptr{Nothing}, Cstring, Cuint, Ptr{Cuint}),
                  txn.handle, cdbname, flags, handle)
     (ret != 0) && throw(LMDBError(ret))
     return DBI(handle[1], dbname)
@@ -37,7 +37,7 @@ function close(env::Environment, dbi::DBI)
     if !isopen(env)
         warn("Environment is closed")
     end
-    ccall((:mdb_dbi_close, liblmdb), Void, (Ptr{Void}, Cuint), env.handle, dbi.handle)
+    ccall((:mdb_dbi_close, liblmdb), Nothing, (Ptr{Nothing}, Cuint), env.handle, dbi.handle)
     dbi.handle = zero(Cuint)
     return
 end
@@ -46,7 +46,7 @@ end
 function flags(txn::Transaction, dbi::DBI)
     flags = Cuint[0]
     ret = ccall((:mdb_dbi_flags, liblmdb), Cint,
-                (Ptr{Void}, Cuint, Ptr{Cuint}),
+                (Ptr{Nothing}, Cuint, Ptr{Cuint}),
                  txn.handle, dbi.handle, flags)
     (ret != 0) && throw(LMDBError(ret))
     return flags[1]
@@ -60,7 +60,7 @@ DB will be deleted from the environment and DB handle will be closed
 function drop(txn::Transaction, dbi::DBI; delete = false)
     del = delete ? Int32(1) : Int32(0)
     ret = ccall((:mdb_drop, liblmdb), Cint,
-                (Ptr{Void}, Cuint, Cint),
+                (Ptr{Nothing}, Cuint, Cint),
                  txn.handle, dbi.handle, del)
     (ret != 0) && throw(LMDBError(ret))
     return ret
@@ -74,7 +74,7 @@ function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
     mdb_val_ref = Ref(MDBValue(v))
 
     ret = ccall((:mdb_put, liblmdb), Cint,
-                (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
+                (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
                 txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
 
     (ret != 0) && throw(LMDBError(ret))
@@ -89,7 +89,7 @@ function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
     mdb_val_ref = Ref((val === C_NULL) ? MDBValue() : MDBValue(v))
 
     ret = ccall((:mdb_del, liblmdb), Cint,
-                (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
+                (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
                 txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
 
     (ret != 0) && throw(LMDBError(ret))
@@ -105,7 +105,7 @@ function get(txn::Transaction, dbi::DBI, key, ::Type{T}) where T
 
     # Get value
     ret = ccall((:mdb_get, liblmdb), Cint,
-                 (Ptr{Void}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
+                 (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
                  txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
     (ret != 0) && throw(LMDBError(ret))
 

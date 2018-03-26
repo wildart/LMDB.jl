@@ -1,6 +1,10 @@
 module LMDB_CUR
     using LMDB
-    using Base.Test
+    if VERSION.minor < 7
+        using Base.Test
+    else
+        using Test
+    end
 
     const dbname = "testdb"
     key = 10
