@@ -61,6 +61,44 @@ function database(cur::Cursor)
     return DBI(dbi, "")
 end
 
+if VERSION >= v"0.7"
+    "Type to implement the Iterator interface"
+    mutable struct KeyIterator
+       cur::Cursor
+       keytype::Type
+    end
+
+    "Iterate over keys"
+    function Base.iterate(iter::KeyIterator, first=true)
+        # Setup parameters
+        mdb_key_ref = Ref(MDBValue())
+        mdb_val_ref = Ref(MDBValue())
+        NOTFOUND::Cint = -30798
+
+        cursor_op = first ? FIRST : NEXT
+        ret = ccall( (:mdb_cursor_get, liblmdb), Cint,
+                   (Ptr{Nothing}, Ptr{MDBValue}, Ptr{MDBValue}, Cint),
+                    iter.cur.handle, mdb_key_ref, mdb_val_ref, Cint(cursor_op))
+
+        if ret == 0
+            # Convert to proper type
+            return (convert(iter.keytype, mdb_key_ref), false)
+        elseif ret == NOTFOUND
+            return nothing
+        else
+            throw(LMDBError(ret))
+        end
+    end
+
+    Base.IteratorSize(::KeyIterator) = Base.SizeUnknown()
+    Base.eltype(iter::KeyIterator) = iter.keytype
+
+    "Return iterator over keys of uniform, specified type"
+    function keys(cur::Cursor, keytype::Type{T}) where T
+        return  KeyIterator(cur, keytype)
+    end
+end
+
 """Retrieve by cursor.
 
 This function retrieves key/data pairs from the database.
