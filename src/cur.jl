@@ -67,7 +67,7 @@ This function retrieves key/data pairs from the database.
 """
 function get(cur::Cursor, key, ::Type{T}, op::CursorOps=SET_KEY) where T
     # Setup parameters
-    k = isbits(typeof(key)) ? [key] :  key
+    k = isbitstype(typeof(key)) ? [key] :  key
     mdb_key_ref = Ref(MDBValue(k))
     mdb_val_ref = Ref(MDBValue())
 
@@ -86,9 +86,9 @@ end
 This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
 """
 function put!(cur::Cursor, key, val; flags::Cuint = zero(Cuint))
-    k = isbits(typeof(key)) ? [key] :  key
+    k = isbitstype(typeof(key)) ? [key] :  key
     mdb_key_ref = Ref(MDBValue(k))
-    v = isbits(typeof(val)) ? [val] :  val
+    v = isbitstype(typeof(val)) ? [val] :  val
     mdb_val_ref = Ref(MDBValue(v))
 
     ret = ccall((:mdb_cursor_put, liblmdb), Cint,

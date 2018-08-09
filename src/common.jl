@@ -10,7 +10,7 @@ MDBValue() = MDBValue(zero(Csize_t), C_NULL)
 MDBValue(_::Nothing) = MDBValue()
 MDBValue(val::String) = MDBValue(sizeof(val), pointer(val))
 function MDBValue(val::T) where {T}
-    isbits(T) && error("Can not wrap a $T in MDBValue. Use a $T array instead")
+    isbitstype(T) && error("Can not wrap a $T in MDBValue. Use a $T array instead")
     val_size = sizeof(eltype(val))*length(val)
     return MDBValue(val_size, pointer(val))
 end

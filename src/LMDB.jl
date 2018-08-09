@@ -3,7 +3,7 @@ module LMDB
 
     using Compat
 
-    if VERSION.minor < 7
+    if VERSION < v"0.7"
         isdefined(:Docile) && eval(:(@document))
     else
         eval(:(@isdefined(Docile) && eval(:(@document))))
