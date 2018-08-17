@@ -1,10 +1,6 @@
 module LMDB_Common
     using LMDB
-    if VERSION.minor < 7
-        using Base.Test
-    else
-        using Test
-    end
+    using Test
 
     import LMDB.MDBValue
 

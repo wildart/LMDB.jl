@@ -1,10 +1,6 @@
 module LMDB_CUR
     using LMDB
-    if VERSION.minor < 7
-        using Base.Test
-    else
-        using Test
-    end
+    using Test
 
     const dbname = "testdb"
     key = 10
@@ -26,9 +22,7 @@ module LMDB_CUR
         try
             @test 0 == put!(cur, key+1, val*string(key+1))
             @test 0 == put!(cur, key, val*string(key))
-            if VERSION >= v"0.7"
-                @test issetequal(collect(keys(cur, typeof(key))), [11, 10])
-            end
+            @test issetequal(collect(keys(cur, typeof(key))), [11, 10])
         finally
             close(cur)
             commit(txn)

@@ -1,11 +1,6 @@
 module LMDB_DBI
     using LMDB
-    if VERSION.minor < 7
-        using Base.Test
-    else
-        using Test
-    end
-
+    using Test
 
     const dbname = "testdb"
     key = 10

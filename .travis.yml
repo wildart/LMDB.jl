@@ -6,7 +6,7 @@ env:
     - ARCH="i686"
     - ARCH="x86_64"
 julia:
-  - 0.6
+  - 0.7
   - nightly
 matrix:
   exclude:
