@@ -1,4 +1,4 @@
-using BinDeps
+using BinDeps, Libdl
 
 @BinDeps.setup
 
