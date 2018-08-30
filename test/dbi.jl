@@ -1,6 +1,6 @@
 module LMDB_DBI
     using LMDB
-    using Base.Test
+    using Test
 
     const dbname = "testdb"
     key = 10

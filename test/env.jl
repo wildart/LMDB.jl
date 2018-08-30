@@ -1,6 +1,6 @@
 module LMDB_Env
     using LMDB
-    using Base.Test
+    using Test
 
     const dbname = "testdb"
 

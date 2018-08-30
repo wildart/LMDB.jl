@@ -2,10 +2,10 @@
 A DB environment supports multiple databases, all residing in the same shared-memory map.
 """
 mutable struct Environment
-    handle::Ptr{Void}
+    handle::Ptr{Nothing}
     path::String
     Environment() = new(C_NULL, "")
-    Environment(h::Ptr{Void}) = new(h, "")
+    Environment(h::Ptr{Nothing}) = new(h, "")
 end
 
 "Return the path that was used in `open`"
@@ -16,8 +16,8 @@ isopen(env::Environment) = env.handle != C_NULL
 
 "Create an LMDB environment handle"
 function create()
-    env_ref = Ref{Ptr{Void}}(C_NULL)
-    ret = ccall( (:mdb_env_create, liblmdb), Cint, (Ptr{Ptr{Void}},), env_ref)
+    env_ref = Ref{Ptr{Nothing}}(C_NULL)
+    ret = ccall( (:mdb_env_create, liblmdb), Cint, (Ptr{Ptr{Nothing}},), env_ref)
     (ret != 0) && throw(LMDBError(ret))
     return Environment(env_ref[])
 end
@@ -45,7 +45,7 @@ end
 function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::Cmode_t = 0o755)
     env.path = path
     ret = ccall((:mdb_env_open, liblmdb), Cint,
-                 (Ptr{Void}, Cstring, Cuint, Cmode_t),
+                 (Ptr{Nothing}, Cstring, Cuint, Cmode_t),
                   env.handle, path, flags, mode)
     (ret != 0) && throw(LMDBError(ret))
     return ret::Cint
@@ -67,7 +67,7 @@ function close(env::Environment)
     if env.handle == C_NULL
         throw(LMDBError(-1,"Environment is already closed"))
     end
-    ccall( (:mdb_env_close, liblmdb), Void, (Ptr{Void},), env.handle)
+    ccall( (:mdb_env_close, liblmdb), Nothing, (Ptr{Nothing},), env.handle)
     env.handle = C_NULL
     env.path = ""
     return
@@ -76,14 +76,14 @@ end
 """Flush the data buffers to disk"""
 function sync(env::Environment, force::Bool = false)
     fval = force ? 1 : 0
-    ret = ccall( (:mdb_env_sync, liblmdb), Cint, (Ptr{Void}, Cint), env.handle, fval)
+    ret = ccall( (:mdb_env_sync, liblmdb), Cint, (Ptr{Nothing}, Cint), env.handle, fval)
     (ret != 0) && throw(LMDBError(ret))
     return ret::Cint
 end
 
 """Set environment flags"""
 function set!(env::Environment, flag::Cuint)
-    ret = ccall( (:mdb_env_set_flags, liblmdb), Cint, (Ptr{Void}, Cuint, Cint), env.handle, flag, one(Cint))
+    ret = ccall( (:mdb_env_set_flags, liblmdb), Cint, (Ptr{Nothing}, Cuint, Cint), env.handle, flag, one(Cint))
     (ret != 0) && throw(LMDBError(ret))
     return flag
 end
@@ -91,7 +91,7 @@ set!(env::Environment, flag::EnvironmentFlags) = set!(env, Cuint(flag))
 
 """Unset environment flags"""
 function unset!(env::Environment, flag::Cuint)
-    ret = ccall( (:mdb_env_set_flags, liblmdb), Cint, (Ptr{Void}, Cuint, Cint), env.handle, flag, zero(Cint))
+    ret = ccall( (:mdb_env_set_flags, liblmdb), Cint, (Ptr{Nothing}, Cuint, Cint), env.handle, flag, zero(Cint))
     (ret != 0) && throw(LMDBError(ret))
     return flag
 end
@@ -114,11 +114,11 @@ unset!(env::Environment, flag::EnvironmentFlags) = unset!(env, Cuint(flag))
 function setindex!(env::Environment, val::Cuint, option::Symbol)
     ret = zero(Cint)
     if option == :Readers
-        ret = ccall( (:mdb_env_set_maxreaders, liblmdb), Cint, (Ptr{Void}, Cuint), env.handle, val)
+        ret = ccall( (:mdb_env_set_maxreaders, liblmdb), Cint, (Ptr{Nothing}, Cuint), env.handle, val)
     elseif option == :MapSize
-        ret = ccall( (:mdb_env_set_mapsize, liblmdb), Cint, (Ptr{Void}, Cuint), env.handle, val)
+        ret = ccall( (:mdb_env_set_mapsize, liblmdb), Cint, (Ptr{Nothing}, Cuint), env.handle, val)
     elseif option == :DBs
-        ret = ccall( (:mdb_env_set_maxdbs, liblmdb), Cint, (Ptr{Void}, Cuint), env.handle, val)
+        ret = ccall( (:mdb_env_set_maxdbs, liblmdb), Cint, (Ptr{Nothing}, Cuint), env.handle, val)
     else
         warn("Cannot set $(string(option)) value")
     end
@@ -142,13 +142,13 @@ function getindex(env::Environment, option::Symbol)
     value = Cuint[0]
     if option == :Flags
         flags = Cuint[0]
-        ret = ccall( (:mdb_env_get_flags, liblmdb), Cint, (Ptr{Void}, Ptr{Cuint}), env.handle, value)
+        ret = ccall( (:mdb_env_get_flags, liblmdb), Cint, (Ptr{Nothing}, Ptr{Cuint}), env.handle, value)
         (ret != 0) && throw(LMDBError(ret))
     elseif option == :Readers
-        ret = ccall( (:mdb_env_get_maxreaders, liblmdb), Cint, (Ptr{Void}, Ptr{Cuint}), env.handle, value)
+        ret = ccall( (:mdb_env_get_maxreaders, liblmdb), Cint, (Ptr{Nothing}, Ptr{Cuint}), env.handle, value)
         (ret != 0) && throw(LMDBError(ret))
     elseif option == :KeySize
-        value[1] = ccall( (:mdb_env_get_maxkeysize, liblmdb), Cint, (Ptr{Void}, ), env.handle)
+        value[1] = ccall( (:mdb_env_get_maxkeysize, liblmdb), Cint, (Ptr{Nothing}, ), env.handle)
     else
         warn("Cannot get $(string(option)) value")
     end
@@ -157,7 +157,7 @@ end
 
 """Information about the environment"""
 struct EnvironmentInfo
-    mapaddr::Ptr{Void}
+    mapaddr::Ptr{Nothing}
     mapsize::Csize_t     # Size of the data memory map
     last_pgno::Csize_t   # ID of the last used page
     last_txnid::Csize_t  # ID of the last committed transaction
@@ -170,7 +170,7 @@ end
 function info(env::Environment)
     ei_ref = Ref(EnvironmentInfo())
     !isopen(env) && return ei_ref[]
-    ret = ccall( (:mdb_env_info, liblmdb), Cint, (Ptr{Void}, Ptr{EnvironmentInfo}), env.handle, ei_ref)
+    ret = ccall( (:mdb_env_info, liblmdb), Cint, (Ptr{Nothing}, Ptr{EnvironmentInfo}), env.handle, ei_ref)
     (ret != 0) && throw(LMDBError(ret))
     return ei_ref[]
 end
