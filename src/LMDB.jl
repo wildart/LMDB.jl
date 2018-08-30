@@ -1,7 +1,6 @@
-__precompile__(true)
 module LMDB
 
-    eval(:(@isdefined(Docile) && eval(:(@document))))
+    @isdefined(Docile) && eval(:(@document))
 
     import Base: open, close, getindex, setindex!, put!, start, reset,
                  isopen, count, delete!, info, keys, get, show, convert, show

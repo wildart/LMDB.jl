@@ -6,17 +6,20 @@ env:
     - ARCH="i686"
     - ARCH="x86_64"
 julia:
-  - 0.7
+  - 1.0
   - nightly
 matrix:
   exclude:
     - os: osx
       env: ARCH="i686"
     - julia: release
+  allow_failures:
+    - julia: nightly
+sudo: false
 notifications:
   email: false
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes -e 'using Pkg; Pkg.build("LMDB"); Pkg.test("LMDB"; coverage=true)'
+#script:
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia --check-bounds=yes -e 'using Pkg; Pkg.build("LMDB"); Pkg.test("LMDB"; coverage=true)'
 after_success:
-  - julia -e 'Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
