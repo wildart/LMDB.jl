@@ -60,9 +60,8 @@ end
 Abort the transaction like `abort`, but keep the transaction handle.
 """
 function reset(txn::Transaction)
-    ret = ccall( (:mdb_txn_reset, liblmdb), Cint, (Ptr{Nothing},), txn.handle)
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    ccall( (:mdb_txn_reset, liblmdb), Nothing, (Ptr{Nothing},), txn.handle)
+    return
 end
 
 """Renew a read-only transaction
