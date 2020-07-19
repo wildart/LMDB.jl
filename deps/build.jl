@@ -2,7 +2,7 @@ using BinDeps, Libdl
 
 @BinDeps.setup
 
-version = "0.9.22"
+version = "0.9.24"
 url = "https://github.com/LMDB/lmdb/archive/LMDB_$(version).tar.gz"
 
 liblmdb = library_dependency("liblmdb")
