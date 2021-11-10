@@ -2,8 +2,7 @@
 A handle to a cursor structure for navigating through a database.
 """
 mutable struct Cursor
-    handle::Ptr{Nothing}
-    Cursor(cur::Ptr{Nothing}) = new(cur)
+    handle::Ptr{MDB_cursor}
 end
 
 "Check if cursor is open"
@@ -11,11 +10,8 @@ isopen(cur::Cursor) = cur.handle != C_NULL
 
 "Create a cursor"
 function open(txn::Transaction, dbi::DBI)
-    cur_ptr_ref = Ref{Ptr{Nothing}}(C_NULL)
-    ret = ccall((:mdb_cursor_open, liblmdb), Cint,
-                 (Ptr{Nothing}, Cuint, Ptr{Ptr{Nothing}}),
-                  txn.handle, dbi.handle, cur_ptr_ref)
-    (ret != 0) && throw(LMDBError(ret))
+    cur_ptr_ref = Ref{Ptr{MDB_cursor}}(C_NULL)
+    mdb_cursor_open(txn.handle, dbi.handle, cur_ptr_ref)
     return Cursor(cur_ptr_ref[])
 end
 
@@ -34,54 +30,49 @@ function close(cur::Cursor)
     if cur.handle == C_NULL
         warn("Cursor is already closed")
     end
-    ccall((:mdb_cursor_close, liblmdb), Nothing, (Ptr{Nothing},), cur.handle)
+    _mdb_cursor_close(cur.handle)
     cur.handle = C_NULL
     return
 end
 
 "Renew a cursor"
 function renew(txn::Transaction, cur::Cursor)
-    ret = ccall((:mdb_cursor_renew, liblmdb), Cint,
-                 (Ptr{Nothing}, Ptr{Nothing}), txn.handle, cur.handle)
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    mdb_cursor_renew(txn.handle, cur.handle)
 end
 
 "Return the cursor's transaction"
 function transaction(cur::Cursor)
-    txn_ptr = ccall((:mdb_cursor_txn, liblmdb), Ptr{Nothing}, (Ptr{Nothing},), cur.handle)
+    txn_ptr = _mdb_cursor_txn(cur.handle)
     (txn_ptr == C_NULL) && return nothing
     return Transaction(txn_ptr)
 end
 
 "Return the cursor's database"
 function database(cur::Cursor)
-    dbi = ccall((:mdb_cursor_dbi, liblmdb), Cuint, (Ptr{Nothing},), cur.handle)
+    dbi = _mdb_cursor_dbi(cur.handle)
     (dbi == 0) && return nothing
     return DBI(dbi, "")
 end
 
 "Type to implement the Iterator interface"
-mutable struct KeyIterator
+mutable struct KeyIterator{T}
    cur::Cursor
-   keytype::Type
 end
 
 "Iterate over keys"
-function Base.iterate(iter::KeyIterator, first=true)
+function Base.iterate(iter::KeyIterator{T}, refs = nothing) where T
     # Setup parameters
-    mdb_key_ref = Ref(MDBValue())
-    mdb_val_ref = Ref(MDBValue())
-    NOTFOUND::Cint = -30798
+    mdb_key_ref, mdb_val_ref, cursor_op = if refs === nothing
+        Ref(MDBValue()), Ref(MDBValue()), MDB_FIRST
+    else
+        (refs..., MDB_NEXT)
+    end
 
-    cursor_op = first ? FIRST : NEXT
-    ret = ccall( (:mdb_cursor_get, liblmdb), Cint,
-               (Ptr{Nothing}, Ptr{MDBValue}, Ptr{MDBValue}, Cint),
-                iter.cur.handle, mdb_key_ref, mdb_val_ref, Cint(cursor_op))
+    ret = _mdb_cursor_get(iter.cur.handle, mdb_key_ref, mdb_val_ref, Cint(cursor_op))
 
     if ret == 0
         # Convert to proper type
-        return (convert(iter.keytype, mdb_key_ref), false)
+        return (convert(T, mdb_key_ref), (mdb_key_ref, mdb_val_ref))
     elseif ret == NOTFOUND
         return nothing
     else
@@ -90,11 +81,11 @@ function Base.iterate(iter::KeyIterator, first=true)
 end
 
 Base.IteratorSize(::KeyIterator) = Base.SizeUnknown()
-Base.eltype(iter::KeyIterator) = iter.keytype
+Base.eltype(iter::KeyIterator{T}) where T = T
 
 "Return iterator over keys of uniform, specified type"
 function keys(cur::Cursor, keytype::Type{T}) where T
-    return  KeyIterator(cur, keytype)
+    return  KeyIterator{T}(cur)
 end
 
 """Retrieve by cursor.
@@ -103,15 +94,11 @@ This function retrieves key/data pairs from the database.
 """
 function get(cur::Cursor, key, ::Type{T}, op::CursorOps=SET_KEY) where T
     # Setup parameters
-    k = isbitstype(typeof(key)) ? [key] :  key
-    mdb_key_ref = Ref(MDBValue(k))
+    mdb_key_ref = Ref(MDBValue(toref(k)))
     mdb_val_ref = Ref(MDBValue())
 
     # Get value
-    ret = ccall( (:mdb_cursor_get, liblmdb), Cint,
-                  (Ptr{Nothing}, Ptr{MDBValue}, Ptr{MDBValue}, Cint),
-                   cur.handle, mdb_key_ref, mdb_val_ref, Cint(op))
-    (ret != 0) && throw(LMDBError(ret))
+    mdb_cursor_get(cur.handle, mdb_key_ref, mdb_val_ref, Cint(op))
 
     # Convert to proper type
     return convert(T, mdb_val_ref)
@@ -122,32 +109,20 @@ end
 This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
 """
 function put!(cur::Cursor, key, val; flags::Cuint = zero(Cuint))
-    k = isbitstype(typeof(key)) ? [key] :  key
-    mdb_key_ref = Ref(MDBValue(k))
-    v = isbitstype(typeof(val)) ? [val] :  val
-    mdb_val_ref = Ref(MDBValue(v))
+    mdb_key_ref = Ref(MDBValue(toref(k)))
+    mdb_val_ref = Ref(MDBValue(toref(v)))
 
-    ret = ccall((:mdb_cursor_put, liblmdb), Cint,
-                 (Ptr{Nothing}, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
-                  cur.handle, mdb_key_ref, mdb_val_ref, flags)
-
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    mdb_cursor_put(cur.handle, mdb_key_ref, mdb_val_ref, flags)
 end
 
 "Delete current key/data pair to which the cursor refers"
 function delete!(cur::Cursor; flags::Cuint = zero(Cuint))
-    ret = ccall((:mdb_cursor_del, liblmdb), Cint,
-                 (Ptr{Nothing}, Cuint), cur.handle, flags)
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    mdb_cursor_del(cur.handle, flags)
 end
 
 "Return count of duplicates for current key"
 function count(cur::Cursor)
-    countp = Csize_t[0]
-    ret = ccall( (:mdb_cursor_count, liblmdb), Cint,
-                  (Ptr{Nothing}, Csize_t), cur.handle, countp)
-    (ret != 0) && throw(LMDBError(ret))
-    return Int(countp[1])
+    countp = Ref(Csize_t(0))
+    mdb_cursor_count(cur.handle, countp)
+    return Int(countp[])
 end
