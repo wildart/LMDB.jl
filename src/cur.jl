@@ -55,35 +55,34 @@ function database(cur::Cursor)
 end
 
 "Type to implement the Iterator interface"
-struct KeyIterator{T,S}
+struct LMDBIterator{R}
    cur::Cursor
-   lb::MDB_val
-   ub::S
+   r::R
 end
+struct ReturnKeys{K} end
+struct ReturnValues{V} end
+struct ReturnBoth{K,V} end
+arcopy(x::Array) = copy(x)
+arcopy(x) = x
+process_returns(::ReturnKeys{K}, mdb_key_ref, _) where K = arcopy(convert(K, mdb_key_ref)),MDB_NEXT
+process_returns(::ReturnValues{V}, _, mdb_val_ref) where V = arcopy(convert(V, mdb_val_ref)), MDB_NEXT
+process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((convert(K, mdb_key_ref)) => arcopy(convert(V, mdb_val_ref))), MBD_NEXT
+init_values(::Any) = Ref(MDBValue()), Ref(MDBValue()),MDB_FIRST
 
-testifstop(_, ::Nothing) = false
-testifstop(newkey, ub) = ub(newkey)
+Base.iterate(iter::LMDBIterator) = Base.iterate(iter, init_values(iter.r))
 
-"Iterate over keys"
-function Base.iterate(iter::KeyIterator{T}, refs = nothing) where T
+"Iterate over database"
+function Base.iterate(iter::LMDBIterator, refs)
     # Setup parameters
-    mdb_key_ref, mdb_val_ref, cursor_op = if refs === nothing
-        op = iter.lb.mv_data == C_NULL ? MDB_FIRST : MDB_SET_RANGE
-        Ref(iter.lb), Ref(MDBValue()), op
-    else
-        (refs..., MDB_NEXT)
-    end
+    mdb_key_ref, mdb_val_ref, cursor_op = refs
 
     ret = _mdb_cursor_get(iter.cur.handle, mdb_key_ref, mdb_val_ref, cursor_op)
 
     if ret == 0
-        newkey = convert(T, mdb_key_ref)
-        # Convert to proper type
-        if testifstop(newkey, iter.ub)
-            return nothing 
-        else 
-            return (newkey, (mdb_key_ref, mdb_val_ref))
-        end
+        pr = process_returns(iter.r, mdb_key_ref, mdb_val_ref)
+        pr === nothing && return nothing
+        retval, nextop = pr
+        return (retval, (mdb_key_ref, mdb_val_ref, nextop))
     elseif ret == MDB_NOTFOUND
         return nothing
     else
@@ -91,15 +90,61 @@ function Base.iterate(iter::KeyIterator{T}, refs = nothing) where T
     end
 end
 
-Base.IteratorSize(::KeyIterator) = Base.SizeUnknown()
-Base.eltype(::KeyIterator{T}) where T = T
+struct DirectoryLister{K}
+    prefix::Vector{UInt8}
+    sep::UInt8
+    istart::Int
+end
+function DirectoryLister(;prefix="", sep = '/')
+    bprefix = Vector{UInt8}(prefix)
+    DirectoryLister{String}(bprefix, UInt8(sep),length(bprefix)+1)
+end
 
+function init_values(d::DirectoryLister) 
+    k,op = if !isempty(d.prefix) 
+        Ref(MDBValue(d.prefix)), MDB_SET_RANGE
+    else
+        Ref(MDBValue()), MDB_FIRST
+    end
+    v = Ref(MDBValue())
+    return k,v,op
+end
+function process_returns(l::DirectoryLister{K}, mdb_key_ref, _) where K
+    k = convert(Vector{UInt8}, mdb_key_ref)
+    if any(i->!=(i...),zip(l.prefix, k))
+        return nothing
+    end
+    nextsep = findnext(==(l.sep),k,l.istart)
+    if nextsep === nothing
+        return arcopy(convert(K, mdb_key_ref)),MDB_NEXT
+    else
+        k = copy(k)
+        resize!(k,nextsep)
+        kout = arcopy(convert(K, Ref(MDBValue(k))))
+        k[end] = k[end]+1
+        mdb_key_ref[] = MDBValue(k)
+        return kout, MDB_SET_RANGE
+    end
+end
+
+
+Base.IteratorSize(::LMDBIterator) = Base.SizeUnknown()
+Base.eltype(::LMDBIterator{<:ReturnKeys{K}}) where K = K
+Base.eltype(::LMDBIterator{<:ReturnValues{V}}) where V = V
+Base.eltype(::LMDBIterator{<:ReturnBoth{K,V}}) where {K,V} = Pair{K,V}
 
 
 "Return iterator over keys of uniform, specified type"
-function keys(cur::Cursor, ::Type{T}; lb = nothing, breakfunc = nothing) where T
-    firstkey = isa(lb, MDB_val) ? lb : isa(lb,Nothing) ? MDBValue() : MDBValue(lb)
-    return KeyIterator{T,typeof(lastkey_ref)}(cur,firstkey,breakfunc)
+function keys(cur::Cursor, ::Type{T}) where T
+    return LMDBIterator(cur, ReturnKeys{T}())
+end
+
+function Base.values(cur::Cursor, ::Type{T}) where T
+    return LMDBIterator(cur,ReturnValues{T}())
+end
+
+function Base.iterate(cur::Cursor, ::Type{K}, ::Type{V}) where {K,V}
+    return Base.iterate(LMDBIterator(cur, ReturnBoth{K,V}()))
 end
 
 """Retrieve by cursor.

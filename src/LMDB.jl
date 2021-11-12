@@ -11,7 +11,7 @@ module LMDB
            DBI, drop, delete!, keys, get, put!,
            Cursor, count, transaction, database,
            isflagset, isopen,
-           LMDBError, CursorOps
+           LMDBError, CursorOps, LMDBDict
 
     """LMDB exception type"""
     struct LMDBError <: Exception
@@ -23,7 +23,6 @@ module LMDB
     function checked_call(f,args...)
         ret = f(args...)
         ret === zero(Cint) || throw(LMDBError(ret))
-        @show f, ret
         ret
     end
 
@@ -34,4 +33,5 @@ module LMDB
     include("txn.jl")
     include("dbi.jl")
     include("cur.jl")
+    include("dicts.jl")
 end

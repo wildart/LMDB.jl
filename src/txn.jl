@@ -25,7 +25,7 @@ It allows to set transaction flags with `flags` option.
 function start(env::Environment; flags::Cuint=zero(Cuint),
                parent::Union{Transaction,Nothing} = nothing)
     txn_ref = Ref{Ptr{MDB_txn}}(C_NULL)
-    p = parent != nothing ? parent.handle : Transaction().handle
+    p = parent !== nothing ? parent.handle : Transaction().handle
     mdb_txn_begin(env.handle, p,  flags, txn_ref)
     return Transaction(txn_ref[])
 end
