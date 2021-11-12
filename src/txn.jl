@@ -46,9 +46,9 @@ end
 The transaction and its cursors must not be used after, because its handle is freed.
 """
 function abort(txn::Transaction)
-    _mdb_txn_abort(txn.handle)
+    r = _mdb_txn_abort(txn.handle)
     txn.handle = C_NULL
-    return
+    r
 end
 
 """Commit all the operations of a transaction into the database
@@ -56,7 +56,9 @@ end
 The transaction and its cursors must not be used after, because its handle is freed.
 """
 function commit(txn::Transaction)
-    mdb_txn_commit(txn.handle)
+    r = mdb_txn_commit(txn.handle)
+    txn.handle = C_NULL
+    r
 end
 
 """Reset a read-only transaction

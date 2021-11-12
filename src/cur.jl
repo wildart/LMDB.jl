@@ -151,7 +151,7 @@ end
 
 This function retrieves key/data pairs from the database.
 """
-function get(cur::Cursor, key, ::Type{T}, op::MDB_cursor_op=SET_KEY) where T
+function get(cur::Cursor, key, ::Type{T}, op::MDB_cursor_op=MDB_SET_KEY) where T
     # Setup parameters
     mdb_key_ref = Ref(MDBValue(toref(key)))
     mdb_val_ref = Ref(MDBValue())

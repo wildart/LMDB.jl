@@ -48,7 +48,6 @@ module LMDB_CUR
                     @test val*string(key) == v
                 end
             end
-            abort(txn)
         end
     end
 

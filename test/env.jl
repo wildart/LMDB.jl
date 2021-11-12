@@ -12,11 +12,11 @@ module LMDB_Env
     @test env[:Flags] == 0
 
     # Manipulate flags
-    @test !isflagset(env[:Flags], Cuint(LMDB.NOSYNC))
-    set!(env, LMDB.NOSYNC)
-    @test isflagset(env[:Flags], Cuint(LMDB.NOSYNC))
-    unset!(env, LMDB.NOSYNC)
-    @test !isflagset(env[:Flags], Cuint(LMDB.NOSYNC))
+    @test !isflagset(env[:Flags], Cuint(LMDB.MDB_NOSYNC))
+    set!(env, LMDB.MDB_NOSYNC)
+    @test isflagset(env[:Flags], Cuint(LMDB.MDB_NOSYNC))
+    unset!(env, LMDB.MDB_NOSYNC)
+    @test !isflagset(env[:Flags], Cuint(LMDB.MDB_NOSYNC))
 
     # Parameters
     @test (env[:Readers] = 100) == 100
@@ -25,7 +25,7 @@ module LMDB_Env
     @test env[:Readers] == 100
 
     # open db
-    mkdir(dbname)
+    isdir(dbname) || mkdir(dbname)
     try
         ret = open(env, dbname)
         @test ret[1] == 0
@@ -36,7 +36,7 @@ module LMDB_Env
 
         # do block
         create() do env
-            set!(env, LMDB.NOSYNC)
+            set!(env, LMDB.MDB_NOSYNC)
             open(env, dbname)
             @test isopen(env)
         end

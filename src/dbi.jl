@@ -55,7 +55,7 @@ function drop(txn::Transaction, dbi::DBI; delete = false)
     mdb_drop(txn.handle, dbi.handle, del)
 end
 
-toref(v) = isbitstype(typeof(v)) ? Ref(v) : v
+toref(v) = isbitstype(typeof(v)) ? [v] : v
 toref(v::Ptr{Nothing}) = v
 
 "Store items into a database"

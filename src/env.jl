@@ -44,7 +44,6 @@ end
 function open(env::Environment, path::String; flags::Cuint=zero(Cuint), mode::LibLMDB.mode_t = LibLMDB.mode_t(0o755))
     env.path = path
     mdb_env_open(env.handle, path, flags, mode)
-    return nothing
 end
 
 "Wrapper of `open` for `do` construct"
