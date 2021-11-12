@@ -1,8 +1,4 @@
-module LMDB_Common
-    using LMDB
-    using Test
-
-    import LMDB.MDBValue
+import LMDB.MDBValue
 
     @test LMDB.version()[1] >= v"0.9.15"
 
@@ -57,4 +53,3 @@ module LMDB_Common
     @test val == value
     @test val == convert(Vector{T}, mdb_val_ref)
     @test val[1] == convert(T, mdb_val_ref)
-end

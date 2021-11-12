@@ -23,6 +23,7 @@ module LMDB
     function checked_call(f,args...)
         ret = f(args...)
         ret === zero(Cint) || throw(LMDBError(ret))
+        @show f, ret
         ret
     end
 
@@ -32,5 +33,5 @@ module LMDB
     include("env.jl")
     include("txn.jl")
     include("dbi.jl")
-    #include("cur.jl")
+    include("cur.jl")
 end

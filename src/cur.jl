@@ -55,25 +55,36 @@ function database(cur::Cursor)
 end
 
 "Type to implement the Iterator interface"
-mutable struct KeyIterator{T}
+struct KeyIterator{T,S}
    cur::Cursor
+   lb::MDB_val
+   ub::S
 end
+
+testifstop(_, ::Nothing) = false
+testifstop(newkey, ub) = ub(newkey)
 
 "Iterate over keys"
 function Base.iterate(iter::KeyIterator{T}, refs = nothing) where T
     # Setup parameters
     mdb_key_ref, mdb_val_ref, cursor_op = if refs === nothing
-        Ref(MDBValue()), Ref(MDBValue()), MDB_FIRST
+        op = iter.lb.mv_data == C_NULL ? MDB_FIRST : MDB_SET_RANGE
+        Ref(iter.lb), Ref(MDBValue()), op
     else
         (refs..., MDB_NEXT)
     end
 
-    ret = _mdb_cursor_get(iter.cur.handle, mdb_key_ref, mdb_val_ref, Cint(cursor_op))
+    ret = _mdb_cursor_get(iter.cur.handle, mdb_key_ref, mdb_val_ref, cursor_op)
 
     if ret == 0
+        newkey = convert(T, mdb_key_ref)
         # Convert to proper type
-        return (convert(T, mdb_key_ref), (mdb_key_ref, mdb_val_ref))
-    elseif ret == NOTFOUND
+        if testifstop(newkey, iter.ub)
+            return nothing 
+        else 
+            return (newkey, (mdb_key_ref, mdb_val_ref))
+        end
+    elseif ret == MDB_NOTFOUND
         return nothing
     else
         throw(LMDBError(ret))
@@ -81,24 +92,27 @@ function Base.iterate(iter::KeyIterator{T}, refs = nothing) where T
 end
 
 Base.IteratorSize(::KeyIterator) = Base.SizeUnknown()
-Base.eltype(iter::KeyIterator{T}) where T = T
+Base.eltype(::KeyIterator{T}) where T = T
+
+
 
 "Return iterator over keys of uniform, specified type"
-function keys(cur::Cursor, keytype::Type{T}) where T
-    return  KeyIterator{T}(cur)
+function keys(cur::Cursor, ::Type{T}; lb = nothing, breakfunc = nothing) where T
+    firstkey = isa(lb, MDB_val) ? lb : isa(lb,Nothing) ? MDBValue() : MDBValue(lb)
+    return KeyIterator{T,typeof(lastkey_ref)}(cur,firstkey,breakfunc)
 end
 
 """Retrieve by cursor.
 
 This function retrieves key/data pairs from the database.
 """
-function get(cur::Cursor, key, ::Type{T}, op::CursorOps=SET_KEY) where T
+function get(cur::Cursor, key, ::Type{T}, op::MDB_cursor_op=SET_KEY) where T
     # Setup parameters
-    mdb_key_ref = Ref(MDBValue(toref(k)))
+    mdb_key_ref = Ref(MDBValue(toref(key)))
     mdb_val_ref = Ref(MDBValue())
 
     # Get value
-    mdb_cursor_get(cur.handle, mdb_key_ref, mdb_val_ref, Cint(op))
+    mdb_cursor_get(cur.handle, mdb_key_ref, mdb_val_ref, op)
 
     # Convert to proper type
     return convert(T, mdb_val_ref)
@@ -109,8 +123,8 @@ end
 This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
 """
 function put!(cur::Cursor, key, val; flags::Cuint = zero(Cuint))
-    mdb_key_ref = Ref(MDBValue(toref(k)))
-    mdb_val_ref = Ref(MDBValue(toref(v)))
+    mdb_key_ref = Ref(MDBValue(toref(key)))
+    mdb_val_ref = Ref(MDBValue(toref(val)))
 
     mdb_cursor_put(cur.handle, mdb_key_ref, mdb_val_ref, flags)
 end

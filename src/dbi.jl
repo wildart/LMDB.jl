@@ -56,19 +56,20 @@ function drop(txn::Transaction, dbi::DBI; delete = false)
 end
 
 toref(v) = isbitstype(typeof(v)) ? Ref(v) : v
+toref(v::Ptr{Nothing}) = v
 
 "Store items into a database"
 function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
-    mdb_key_ref = Ref(MDBValue(toref(k)))
-    mdb_val_ref = Ref(MDBValue(toref(v)))
-
-    mdb_put(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
+    mdb_key_ref = Ref(MDBValue(toref(key)))
+    mdb_val_ref = Ref(MDBValue(toref(val)))
+    r = mdb_put(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
+    r
 end
 
 "Delete items from a database"
 function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
-    mdb_key_ref = Ref(MDBValue(toref(k)))
-    mdb_val_ref = Ref(MDBValue(toref(v)))
+    mdb_key_ref = Ref(MDBValue(toref(key)))
+    mdb_val_ref = val === C_NULL ? Ref(MDBValue()) : Ref(MDBValue(toref(val)))
 
     mdb_del(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
 end

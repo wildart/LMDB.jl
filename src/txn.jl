@@ -29,8 +29,17 @@ function start(env::Environment; flags::Cuint=zero(Cuint),
     mdb_txn_begin(env.handle, p,  flags, txn_ref)
     return Transaction(txn_ref[])
 end
-start(f::Function, env::Environment; flags::EnvironmentFlags=Cuint(0)) = f(start(env, flags=Cuint(flags)))
-
+function start(f::Function, env::Environment; flags::EnvironmentFlags=Cuint(0)) 
+    txn = start(env, flags=Cuint(flags))
+    try
+        r = f(txn)
+        commit(txn)
+        r
+    catch e
+        _mdb_txn_abort(txn.handle)
+        rethrow(e)
+    end
+end
 
 """Abandon all the operations of the transaction instead of saving them
 
