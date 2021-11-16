@@ -8,7 +8,7 @@ Order   = [:function, :type]
 Private = false
 ```
 
-## Not Exported
+### Not Exported
 
 ```@autodocs
 Modules = [LMDB]
