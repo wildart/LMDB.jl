@@ -10,16 +10,17 @@ mutable struct LMDBDict{K,V}
         x
     end
 end
-function LMDBDict{K,V}(path::String) where {K,V} 
+function LMDBDict{K,V}(path::String; readonly = false) where {K,V} 
+    flags = readonly ? MDB_RDONLY : zero(Cuint)
     env = LMDB.create()
     open(env, path)
     #A transaction just for getting a DBI handle
-    dbi = LMDB.start(env) do txn
+    dbi = LMDB.start(env,flags=flags) do txn
         LMDB.open(txn)
     end
     LMDBDict{K,V}(env, dbi)
 end
-LMDBDict(path::String) = LMDBDict{String, Vector{Uint8}}(path)
+LMDBDict(path::String; kwargs...) = LMDBDict{String, Vector{Uint8}}(path; kwargs...)
 
 
 function cursor_do(f, d; readonly = false)
@@ -40,33 +41,57 @@ end
 
 function list_dirs(d::LMDBDict{String}; prefix = "", sep = '/')
     cursor_do(d, readonly = true) do cur
-        iter = LMDB.LMDBIterator(cur,LMDB.DirectoryLister(;prefix=prefix, sep = sep))
+        bprefix = Vector{UInt8}(prefix)
+        iter = LMDB.LMDBIterator(cur,LMDB.DirectoryLister(;sep = sep, lprefix = length(bprefix)),bprefix)
         collect(iter)
     end
 end
 
-function Base.keys(d::LMDBDict{K}) where K
+function Base.keys(d::LMDBDict{K}; prefix=UInt8[]) where K
     cursor_do(d, readonly = true) do cur
-        collect(keys(cur,K))
+        collect(keys(cur,K,prefix=prefix))
     end
 end
 
-function Base.values(d::LMDBDict{K,V}) where {K,V}
+function Base.values(d::LMDBDict{K,V}; prefix=UInt8[]) where {K,V}
     cursor_do(d, readonly = true) do cur
-        collect(values(cur,V))
+        collect(values(cur,V,prefix=prefix))
     end
 end
 
-function Base.collect(d::LMDBDict{K,V}) where {K,V}
+function Base.collect(d::LMDBDict{K,V}; prefix=UInt8[]) where {K,V}
     cursor_do(d, readonly = true) do cur
-        collect((LMDB.LMDBIterator{LMDB.ReturnBoth{K,V}}(cur)))
+        collect((LMDB.LMDBIterator(cur,LMDB.ReturnBoth{K,V}(),Vector{UInt8}(prefix))))
     end
 end
 
+function valuesize(d::LMDBDict; prefix = UInt8[])
+    cursor_do(d, readonly = true) do cur
+        iter = LMDB.LMDBIterator(cur,LMDB.ReturnValueSize(),Vector{UInt8}(prefix))
+        sum(iter)
+    end
+end
 
 function Base.getindex(d::LMDBDict{K,V},k) where {K,V}
     cursor_do(d, readonly = true) do cur
         LMDB.get(cur, k, V, LMDB.MDB_SET_KEY)
+    end
+end
+
+function Base.haskey(d::LMDBDict{K}, key) where K
+    txn_dbi_do(d, readonly = true) do txn, dbi
+        mdb_key_ref = Ref(MDBValue(toref(key)))
+        mdb_val_ref = Ref(MDBValue())
+        @show key
+        # Get value
+        ret = _mdb_get(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
+        if ret == MDB_NOTFOUND
+            return false
+        elseif ret == Cint(0)
+            return true
+        else
+            throw(LMDB.LMDBError(ret))
+        end
     end
 end
 

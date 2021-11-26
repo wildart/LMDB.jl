@@ -58,18 +58,30 @@ end
 struct LMDBIterator{R}
    cur::Cursor
    r::R
+   prefix::Vector{UInt8}
 end
 struct ReturnKeys{K} end
 struct ReturnValues{V} end
 struct ReturnBoth{K,V} end
+struct ReturnValueSize end
+
 arcopy(x::Array) = copy(x)
 arcopy(x) = x
 process_returns(::ReturnKeys{K}, mdb_key_ref, _) where K = arcopy(convert(K, mdb_key_ref)),MDB_NEXT
 process_returns(::ReturnValues{V}, _, mdb_val_ref) where V = arcopy(convert(V, mdb_val_ref)), MDB_NEXT
-process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((convert(K, mdb_key_ref)) => arcopy(convert(V, mdb_val_ref))), MBD_NEXT
-init_values(::Any) = Ref(MDBValue()), Ref(MDBValue()),MDB_FIRST
+process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((convert(K, mdb_key_ref)) => arcopy(convert(V, mdb_val_ref))), MDB_NEXT
+process_returns(::ReturnValueSize, _, mdb_val_ref) = mdb_val_ref[].mv_size, MDB_NEXT
+function init_values(d::LMDBIterator)
+    k,op = if !isempty(d.prefix) 
+        Ref(MDBValue(d.prefix)), MDB_SET_RANGE
+    else
+        Ref(MDBValue()), MDB_FIRST
+    end
+    v = Ref(MDBValue())
+    return k,v,op
+end
 
-Base.iterate(iter::LMDBIterator) = Base.iterate(iter, init_values(iter.r))
+Base.iterate(iter::LMDBIterator) = Base.iterate(iter, init_values(iter))
 
 "Iterate over database"
 function Base.iterate(iter::LMDBIterator, refs)
@@ -79,6 +91,13 @@ function Base.iterate(iter::LMDBIterator, refs)
     ret = _mdb_cursor_get(iter.cur.handle, mdb_key_ref, mdb_val_ref, cursor_op)
 
     if ret == 0
+        #Check if we are still in key prefix
+        if !isempty(iter.prefix)
+            k = convert(Vector{UInt8}, mdb_key_ref)
+            if any(i->!=(i...),zip(iter.prefix, k))
+                return nothing
+            end
+        end
         pr = process_returns(iter.r, mdb_key_ref, mdb_val_ref)
         pr === nothing && return nothing
         retval, nextop = pr
@@ -91,29 +110,15 @@ function Base.iterate(iter::LMDBIterator, refs)
 end
 
 struct DirectoryLister{K}
-    prefix::Vector{UInt8}
     sep::UInt8
     istart::Int
 end
-function DirectoryLister(;prefix="", sep = '/')
-    bprefix = Vector{UInt8}(prefix)
-    DirectoryLister{String}(bprefix, UInt8(sep),length(bprefix)+1)
+function DirectoryLister(; sep = '/', lprefix=0)
+    DirectoryLister{String}(UInt8(sep),lprefix+1)
 end
 
-function init_values(d::DirectoryLister) 
-    k,op = if !isempty(d.prefix) 
-        Ref(MDBValue(d.prefix)), MDB_SET_RANGE
-    else
-        Ref(MDBValue()), MDB_FIRST
-    end
-    v = Ref(MDBValue())
-    return k,v,op
-end
 function process_returns(l::DirectoryLister{K}, mdb_key_ref, _) where K
     k = convert(Vector{UInt8}, mdb_key_ref)
-    if any(i->!=(i...),zip(l.prefix, k))
-        return nothing
-    end
     nextsep = findnext(==(l.sep),k,l.istart)
     if nextsep === nothing
         return arcopy(convert(K, mdb_key_ref)),MDB_NEXT
@@ -129,22 +134,22 @@ end
 
 
 Base.IteratorSize(::LMDBIterator) = Base.SizeUnknown()
-Base.eltype(::LMDBIterator{<:ReturnKeys{K}}) where K = K
-Base.eltype(::LMDBIterator{<:ReturnValues{V}}) where V = V
-Base.eltype(::LMDBIterator{<:ReturnBoth{K,V}}) where {K,V} = Pair{K,V}
-
+Base.eltype(::Type{<:LMDBIterator{<:ReturnKeys{K}}}) where K = K
+Base.eltype(::Type{<:LMDBIterator{<:ReturnValues{V}}}) where V = V
+Base.eltype(::Type{<:LMDBIterator{<:ReturnBoth{K,V}}}) where {K,V} = Pair{K,V}
+Base.eltype(::Type{<:LMDBIterator{<:ReturnValueSize}}) = Csize_t
 
 "Return iterator over keys of uniform, specified type"
-function keys(cur::Cursor, ::Type{T}) where T
-    return LMDBIterator(cur, ReturnKeys{T}())
+function keys(cur::Cursor, ::Type{T}; prefix = UInt8[]) where T
+    return LMDBIterator(cur, ReturnKeys{T}(), Vector{UInt8}(prefix))
 end
 
-function Base.values(cur::Cursor, ::Type{T}) where T
-    return LMDBIterator(cur,ReturnValues{T}())
+function Base.values(cur::Cursor, ::Type{T}; prefix = UInt8[]) where T
+    return LMDBIterator(cur,ReturnValues{T}(),Vector{UInt8}(prefix))
 end
 
 function Base.iterate(cur::Cursor, ::Type{K}, ::Type{V}) where {K,V}
-    return Base.iterate(LMDBIterator(cur, ReturnBoth{K,V}()))
+    return Base.iterate(LMDBIterator(cur, ReturnBoth{K,V}()),Vector{UInt8}(prefix))
 end
 
 """Retrieve by cursor.
