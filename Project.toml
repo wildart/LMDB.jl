@@ -1,14 +1,10 @@
 name = "LMDB"
 uuid = "11f193de-5e89-5f17-923a-7d207d56daf9"
 authors = ["Art Wild <wildart@gmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
-BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
+CEnum = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+LMDB_jll = "6206cf0b-f360-5984-af49-5437264c140e"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]

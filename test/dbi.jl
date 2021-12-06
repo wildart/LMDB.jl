@@ -32,10 +32,10 @@ module LMDB_DBI
 
         # Block style
         create() do env
-            set!(env, LMDB.NOSYNC)
+            set!(env, LMDB.MDB_NOSYNC)
             open(env, dbname)
             start(env) do txn
-                open(txn, flags = Cuint(LMDB.REVERSEKEY)) do dbi
+                open(txn, flags = Cuint(LMDB.MDB_REVERSEKEY)) do dbi
                     k = key
                     value = get(txn, dbi, k, String)
                     println("Got value for key $(k): $(value)")
@@ -56,7 +56,6 @@ module LMDB_DBI
                     println("Got value for key $(k): $(value)")
                     @test value == [key, key+1, key+2]
                 end
-                abort(txn)
             end
         end
     finally

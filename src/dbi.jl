@@ -2,9 +2,8 @@
 A handle for an individual database in the DB environment.
 """
 mutable struct DBI
-    handle::Cuint
+    handle::MDB_dbi
     name::String
-    DBI(dbi::Cuint, name::String) = new(dbi, name)
 end
 
 "Check if database is open"
@@ -12,13 +11,10 @@ isopen(dbi::DBI) = dbi.handle != zero(Cuint)
 
 "Open a database in the environment"
 function open(txn::Transaction, dbname::String = ""; flags::Cuint = zero(Cuint))
-    cdbname = length(dbname) > 0 ? dbname : convert(Cstring, Ptr{UInt8}(C_NULL))
-    handle = Cuint[0]
-    ret = ccall((:mdb_dbi_open, liblmdb), Cint,
-                (Ptr{Nothing}, Cstring, Cuint, Ptr{Cuint}),
-                 txn.handle, cdbname, flags, handle)
-    (ret != 0) && throw(LMDBError(ret))
-    return DBI(handle[1], dbname)
+    cdbname = length(dbname) > 0 ? dbname : Ptr{Cchar}(C_NULL)
+    handle = Ref{MDB_dbi}()
+    mdb_dbi_open(txn.handle, cdbname, flags, handle)
+    return DBI(handle[], dbname)
 end
 
 "Wrapper of DBI `open` for `do` construct"
@@ -37,19 +33,16 @@ function close(env::Environment, dbi::DBI)
     if !isopen(env)
         warn("Environment is closed")
     end
-    ccall((:mdb_dbi_close, liblmdb), Nothing, (Ptr{Nothing}, Cuint), env.handle, dbi.handle)
+    _mdb_dbi_close(env.handle, dbi.handle)
     dbi.handle = zero(Cuint)
     return
 end
 
 "Retrieve the DB flags for a database handle"
 function flags(txn::Transaction, dbi::DBI)
-    flags = Cuint[0]
-    ret = ccall((:mdb_dbi_flags, liblmdb), Cint,
-                (Ptr{Nothing}, Cuint, Ptr{Cuint}),
-                 txn.handle, dbi.handle, flags)
-    (ret != 0) && throw(LMDBError(ret))
-    return flags[1]
+    flags = Ref{Cuint}(0)
+    mdb_dbi_flags(txn.handle, dbi.handle, flags)
+    return flags[]
 end
 
 """Empty or delete+close a database.
@@ -58,56 +51,36 @@ If parameter `delete` is `false` DB will be emptied, otherwise
 DB will be deleted from the environment and DB handle will be closed
 """
 function drop(txn::Transaction, dbi::DBI; delete = false)
-    del = delete ? Int32(1) : Int32(0)
-    ret = ccall((:mdb_drop, liblmdb), Cint,
-                (Ptr{Nothing}, Cuint, Cint),
-                 txn.handle, dbi.handle, del)
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    del = Cint(delete)
+    mdb_drop(txn.handle, dbi.handle, del)
 end
+
+toref(v) = isbitstype(typeof(v)) ? [v] : v
+toref(v::Ptr{Nothing}) = v
 
 "Store items into a database"
 function put!(txn::Transaction, dbi::DBI, key, val; flags::Cuint = zero(Cuint))
-    k = isbitstype(typeof(key)) ? [key] :  key
-    mdb_key_ref = Ref(MDBValue(k))
-    v = isbitstype(typeof(val)) ? [val] :  val
-    mdb_val_ref = Ref(MDBValue(v))
-
-    ret = ccall((:mdb_put, liblmdb), Cint,
-                (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}, Cuint),
-                txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
-
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    mdb_key_ref = Ref(MDBValue(toref(key)))
+    mdb_val_ref = Ref(MDBValue(toref(val)))
+    r = mdb_put(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref, flags)
+    r
 end
 
 "Delete items from a database"
 function delete!(txn::Transaction, dbi::DBI, key, val=C_NULL)
-    k = isbitstype(typeof(key)) ? [key] : key
-    mdb_key_ref = Ref(MDBValue(k))
-    v = isbitstype(typeof(val)) ? [val] : val
-    mdb_val_ref = Ref((val === C_NULL) ? MDBValue() : MDBValue(v))
+    mdb_key_ref = Ref(MDBValue(toref(key)))
+    mdb_val_ref = val === C_NULL ? Ref(MDBValue()) : Ref(MDBValue(toref(val)))
 
-    ret = ccall((:mdb_del, liblmdb), Cint,
-                (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
-                txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
-
-    (ret != 0) && throw(LMDBError(ret))
-    return ret
+    mdb_del(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
 end
 
 "Get items from a database"
 function get(txn::Transaction, dbi::DBI, key, ::Type{T}) where T
-    # Setup parameters
-    k = isbitstype(typeof(key)) ? [key] :  key
-    mdb_key_ref = Ref(MDBValue(k))
+    mdb_key_ref = Ref(MDBValue(toref(key)))
     mdb_val_ref = Ref(MDBValue())
 
     # Get value
-    ret = ccall((:mdb_get, liblmdb), Cint,
-                 (Ptr{Nothing}, Cuint, Ptr{MDBValue}, Ptr{MDBValue}),
-                 txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
-    (ret != 0) && throw(LMDBError(ret))
+    mdb_get(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
 
     # Convert to proper type
     return convert(T, mdb_val_ref)
