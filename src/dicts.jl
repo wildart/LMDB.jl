@@ -21,7 +21,8 @@ function LMDBDict{K,V}(path::String; readonly = false) where {K,V}
     LMDBDict{K,V}(env, dbi)
 end
 LMDBDict(path::String; kwargs...) = LMDBDict{String, Vector{Uint8}}(path; kwargs...)
-
+Base.keytype(::LMDBDict{K}) where K = K
+Base.eltype(::LMDBDict{<:Any,V}) where V = V
 
 function cursor_do(f, d; readonly = false)
     txnflags = readonly ? Cuint(LMDB.MDB_RDONLY) : Cuint(0)
@@ -74,15 +75,14 @@ end
 
 function Base.getindex(d::LMDBDict{K,V},k) where {K,V}
     cursor_do(d, readonly = true) do cur
-        LMDB.get(cur, k, V, LMDB.MDB_SET_KEY)
+        LMDB.get(cur, convert(K,k), V, LMDB.MDB_SET_KEY)
     end
 end
 
 function Base.haskey(d::LMDBDict{K}, key) where K
     txn_dbi_do(d, readonly = true) do txn, dbi
-        mdb_key_ref = Ref(MDBValue(toref(key)))
+        mdb_key_ref = Ref(MDBValue(toref(convert(K,key))))
         mdb_val_ref = Ref(MDBValue())
-        @show key
         # Get value
         ret = _mdb_get(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
         if ret == MDB_NOTFOUND
@@ -97,14 +97,14 @@ end
 
 function Base.setindex!(d::LMDBDict{K,V},v,k) where {K,V}
     txn_dbi_do(d) do txn, dbi
-        LMDB.put!(txn,dbi,k,v)
+        LMDB.put!(txn,dbi,convert(K,k),convert(V,v))
     end
     v
 end
 
 function Base.delete!(d::LMDBDict{K},k) where K
     txn_dbi_do(d) do txn, dbi
-        LMDB.delete!(txn, dbi, k)
+        LMDB.delete!(txn, dbi, convert(K,k))
     end
     d
 end
