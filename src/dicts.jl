@@ -10,8 +10,11 @@ mutable struct LMDBDict{K,V}
         x
     end
 end
-function LMDBDict{K,V}(path::String; readonly = false) where {K,V} 
+function LMDBDict{K,V}(path::String; readonly = false, rdahead=false) where {K,V} 
     flags = readonly ? MDB_RDONLY : zero(Cuint)
+    if !rdahead
+        flags = flags | MDB_NORDAHEAD
+    end
     env = LMDB.create()
     open(env, path)
     #A transaction just for getting a DBI handle
@@ -23,7 +26,10 @@ end
 LMDBDict(path::String; kwargs...) = LMDBDict{String, Vector{Uint8}}(path; kwargs...)
 Base.keytype(::LMDBDict{K}) where K = K
 Base.eltype(::LMDBDict{<:Any,V}) where V = V
-
+function Base.close(d::LMDBDict)
+    LMDB.close(d.env,d.dbi)
+    LMDB.close(d.env)
+end
 function cursor_do(f, d; readonly = false)
     txnflags = readonly ? Cuint(LMDB.MDB_RDONLY) : Cuint(0)
     LMDB.start(d.env, flags = txnflags) do txn
@@ -89,6 +95,22 @@ function Base.haskey(d::LMDBDict{K}, key) where K
             return false
         elseif ret == Cint(0)
             return true
+        else
+            throw(LMDB.LMDBError(ret))
+        end
+    end
+end
+
+function Base.get(d::LMDBDict{K,V}, key, default) where {K,V}
+    txn_dbi_do(d, readonly = true) do txn, dbi
+        mdb_key_ref = Ref(MDBValue(toref(convert(K,key))))
+        mdb_val_ref = Ref(MDBValue())
+        # Get value
+        ret = _mdb_get(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
+        if ret == MDB_NOTFOUND
+            return default
+        elseif ret == Cint(0)
+            return convert(V, mdb_val_ref)
         else
             throw(LMDB.LMDBError(ret))
         end
