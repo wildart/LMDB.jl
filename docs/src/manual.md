@@ -79,7 +79,7 @@ If you don't want to deal directly with the C interface it is possible to use th
 
 ````julia
 d = LMDBDict{String, Vector{Float64}}("mydb")
-```
+````
 
 Note that to avoid repeated opening and closing of the database, the dict wraps a few C Pointers. They might be used by different threads, but should not be copied to other processes. The pointers will be freed when the object is gc-ed or manually when `close(d)` is called. 
 One can use this like a normal Julia dict:
