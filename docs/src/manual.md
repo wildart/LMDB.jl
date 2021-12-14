@@ -72,3 +72,48 @@ finally
     close(env)           # close environment
 end
 ```
+
+### Dict-like data access
+
+If you don't want to deal directly with the C interface it is possible to use the `LMDBDict` type that implements parts of Julia's Dictionary interface, except iteration. One can construct a database connected to the folder `"mydb"` the following way:
+
+````julia
+d = LMDBDict{String, Vector{Float64}}("mydb")
+```
+
+Note that to avoid repeated opening and closing of the database, the dict wraps a few C Pointers. They might be used by different threads, but should not be copied to other processes. The pointers will be freed when the object is gc-ed or manually when `close(d)` is called. 
+One can use this like a normal Julia dict:
+
+````julia
+d["aa"] = [1.0, 2.0, 3.0]
+
+d["ab"] = 1.0:2.0:10.0
+
+d["bb"] = [-1, -2, -3, -4]
+````
+
+Type conversions happen automatically if necessary. Keys, values and key-value pairs can be retrieved through `keys`, `values`, and `collect` respectively. 
+All these functions take an additional `prefix` argument. 
+
+````julia
+collect(d)
+````
+````
+3-element Vector{Pair{String, Vector{Float64}}}:
+ "aa" => [1.0, 2.0, 3.0]
+ "ab" => [1.0, 3.0, 5.0, 7.0, 9.0]
+ "bb" => [-1.0, -2.0, -3.0, -4.0]
+````
+
+````julia
+keys(d, prefix="a")
+````
+````
+2-element Vector{String}:
+ "aa"
+ "ab"
+````
+
+
+
+
