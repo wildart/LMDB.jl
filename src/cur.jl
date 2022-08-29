@@ -28,7 +28,7 @@ end
 "Close a cursor"
 function close(cur::Cursor)
     if cur.handle == C_NULL
-        warn("Cursor is already closed")
+        @warn("Cursor is already closed")
     end
     _mdb_cursor_close(cur.handle)
     cur.handle = C_NULL
@@ -72,7 +72,7 @@ process_returns(::ReturnValues{V}, _, mdb_val_ref) where V = arcopy(convert(V, m
 process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((convert(K, mdb_key_ref)) => arcopy(convert(V, mdb_val_ref))), MDB_NEXT
 process_returns(::ReturnValueSize, _, mdb_val_ref) = mdb_val_ref[].mv_size, MDB_NEXT
 function init_values(d::LMDBIterator)
-    k,op = if !isempty(d.prefix) 
+    k,op = if !isempty(d.prefix)
         Ref(MDBValue(d.prefix)), MDB_SET_RANGE
     else
         Ref(MDBValue()), MDB_FIRST

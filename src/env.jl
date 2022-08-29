@@ -111,7 +111,7 @@ function setindex!(env::Environment, val::Cuint, option::Symbol)
     elseif option == :DBs
         mdb_env_set_maxdbs(env.handle, val)
     else
-        warn("Cannot set $(string(option)) value")
+        @warn("Cannot set $(string(option)) value")
         Cint(0)
     end
 end
@@ -138,7 +138,7 @@ function getindex(env::Environment, option::Symbol)
     elseif option == :KeySize
         value[1] = _mdb_env_get_maxkeysize(env.handle)
     else
-        warn("Cannot get $(string(option)) value")
+        @warn("Cannot get $(string(option)) value")
     end
     return value[1]
 end
