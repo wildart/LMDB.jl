@@ -49,4 +49,34 @@ d["b"] = [0,0,0]
 @test LMDB.list_dirs(d) == ["aa/", "b"]
 @test LMDB.list_dirs(d,prefix="aa/") == ["aa/a", "aa/b", "aa/c"]
 @test LMDB.valuesize(d,prefix="aa/") == sizeof(Float32)*18
+
+@testset "Tests for get and get!" begin
+    mktempdir() do dir
+        d = LMDBDict{String, String}(dir)
+        @test !haskey(d, "foo")
+        @test get(d, "foo", "bar") == "bar"
+        @test !haskey(d, "foo")
+        @test get!(d, "foo", "bar") == "bar"
+        @test haskey(d, "foo")
+        @test d["foo"] == "bar"
+        @test get(d, "foo", "hello") == "bar"
+        @test d["foo"] == "bar"
+        @test get!(d, "foo", "hello") == "bar"
+        @test d["foo"] == "bar"
+    end
+    mktempdir() do dir
+        d = LMDBDict{String, String}(dir)
+        @test !haskey(d, "foo")
+        @test get(() -> "bar", d, "foo") == "bar"
+        @test !haskey(d, "foo")
+        @test get!(() -> "bar", d, "foo") == "bar"
+        @test haskey(d, "foo")
+        @test d["foo"] == "bar"
+        @test get(() -> "hello", d, "foo") == "bar"
+        @test d["foo"] == "bar"
+        @test get!(() -> "hello", d, "foo") == "bar"
+        @test d["foo"] == "bar"
+    end
+end
+
 end
