@@ -10,7 +10,7 @@ mutable struct LMDBDict{K,V}
         x
     end
 end
-function LMDBDict{K,V}(path::String; readonly = false, rdahead=false) where {K,V} 
+function LMDBDict{K,V}(path::String; readonly = false, rdahead=false) where {K,V}
     flags = readonly ? MDB_RDONLY : zero(Cuint)
     if !rdahead
         flags = flags | MDB_NORDAHEAD
@@ -110,7 +110,7 @@ function Base.get(d::LMDBDict{K,V}, key, default) where {K,V}
         if ret == MDB_NOTFOUND
             return default
         elseif ret == Cint(0)
-            return convert(V, mdb_val_ref)
+            return mbd_unpack(V, mdb_val_ref)
         else
             throw(LMDB.LMDBError(ret))
         end
