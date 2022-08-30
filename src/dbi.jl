@@ -31,7 +31,7 @@ end
 "Close a database handle"
 function close(env::Environment, dbi::DBI)
     if !isopen(env)
-        warn("Environment is closed")
+        @warn("Environment is closed")
     end
     _mdb_dbi_close(env.handle, dbi.handle)
     dbi.handle = zero(Cuint)
