@@ -83,5 +83,5 @@ function get(txn::Transaction, dbi::DBI, key, ::Type{T}) where T
     mdb_get(txn.handle, dbi.handle, mdb_key_ref, mdb_val_ref)
 
     # Convert to proper type
-    return convert(T, mdb_val_ref)
+    return mbd_unpack(T, mdb_val_ref)
 end

@@ -14,7 +14,7 @@ using Test
     mdb_val_ref = Ref(MDBValue(val));
     mdb_val = mdb_val_ref[]
     # @test val == unsafe_string(convert(Ptr{UInt8}, mdb_val.data), mdb_val.size)
-    @test val == convert(String, mdb_val_ref)
+    @test val == LMDB.mbd_unpack(String, mdb_val_ref)
 
     val = [1233] # dense array
     T = eltype(val)
@@ -25,7 +25,7 @@ using Test
     nvals = floor(Int, mdb_val.mv_size/sizeof(T))
     value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.mv_data), nvals)
     @test val == value
-    @test val == convert(Vector{Int}, mdb_val_ref)
+    @test val == LMDB.mbd_unpack(Vector{Int}, mdb_val_ref)
 
     val = [0x0003, 0xff45]
     val_size = sizeof(val)
@@ -36,7 +36,7 @@ using Test
     nvals = floor(Int, mdb_val.mv_size/sizeof(T))
     value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.mv_data), nvals)
     @test val == value
-    @test val == convert(Vector{UInt16}, mdb_val_ref)
+    @test val == LMDB.mbd_unpack(Vector{UInt16}, mdb_val_ref)
 
     struct TestType
         i::Int
@@ -53,5 +53,5 @@ using Test
     nvals = floor(Int, mdb_val.mv_size/sizeof(T))
     value = unsafe_wrap(Array, convert(Ptr{T}, mdb_val.mv_data), nvals)
     @test val == value
-    @test val == convert(Vector{T}, mdb_val_ref)
-    @test val[1] == convert(T, mdb_val_ref)
+    @test val == LMDB.mbd_unpack(Vector{T}, mdb_val_ref)
+    @test val[1] == LMDB.mbd_unpack(T, mdb_val_ref)

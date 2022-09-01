@@ -9,15 +9,15 @@ function MDBValue(val::T) where {T}
     return MDB_val(Csize_t(val_size), convert(Ptr{Cvoid},pointer(val)))
 end
 
-convert(::Type{T}, mdb_val_ref::Ref{MDB_val}) where {T} = _convert(T, mdb_val_ref[])
-function _convert(::Type{String}, mdb_val::MDB_val)
+mbd_unpack(::Type{T}, mdb_val_ref::Ref{MDB_val}) where {T} = _mbd_unpack(T, mdb_val_ref[])
+function _mbd_unpack(::Type{T}, mdb_val::MDB_val) where {T <: String}
     unsafe_string(convert(Ptr{UInt8}, mdb_val.mv_data), mdb_val.mv_size)
 end
-function _convert(::Type{Vector{T}}, mdb_val::MDB_val) where {T}
+function _mbd_unpack(::Type{V}, mdb_val::MDB_val) where {T, V <: Vector{T}}
     res = unsafe_wrap(Array, convert(Ptr{UInt8}, mdb_val.mv_data), mdb_val.mv_size)
-    reinterpret(T,res)
+    reinterpret(T, res)
 end
-function _convert(::Type{T}, mdb_val::MDB_val) where {T}
+function _mbd_unpack(::Type{T}, mdb_val::MDB_val) where {T}
     unsafe_load(convert(Ptr{T}, mdb_val.mv_data))
 end
 

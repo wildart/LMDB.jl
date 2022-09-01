@@ -3,7 +3,7 @@ module LMDB
     @isdefined(Docile) && eval(:(@document))
 
     import Base: open, close, getindex, setindex!, put!, reset,
-                 isopen, count, delete!, keys, get, show, convert, show
+                 isopen, count, delete!, keys, get, show, show
     import Base.Iterators: drop
 
     export Environment, create, open, close, sync, set!, unset!, getindex, setindex!, path, info, show,

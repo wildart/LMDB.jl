@@ -67,9 +67,9 @@ struct ReturnValueSize end
 
 arcopy(x::Array) = copy(x)
 arcopy(x) = x
-process_returns(::ReturnKeys{K}, mdb_key_ref, _) where K = arcopy(convert(K, mdb_key_ref)),MDB_NEXT
-process_returns(::ReturnValues{V}, _, mdb_val_ref) where V = arcopy(convert(V, mdb_val_ref)), MDB_NEXT
-process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((convert(K, mdb_key_ref)) => arcopy(convert(V, mdb_val_ref))), MDB_NEXT
+process_returns(::ReturnKeys{K}, mdb_key_ref, _) where K = arcopy(mbd_unpack(K, mdb_key_ref)),MDB_NEXT
+process_returns(::ReturnValues{V}, _, mdb_val_ref) where V = arcopy(mbd_unpack(V, mdb_val_ref)), MDB_NEXT
+process_returns(::ReturnBoth{K,V}, mdb_key_ref, mdb_val_ref) where {K,V} = arcopy((mbd_unpack(K, mdb_key_ref)) => arcopy(mbd_unpack(V, mdb_val_ref))), MDB_NEXT
 process_returns(::ReturnValueSize, _, mdb_val_ref) = mdb_val_ref[].mv_size, MDB_NEXT
 function init_values(d::LMDBIterator)
     k,op = if !isempty(d.prefix)
@@ -93,7 +93,7 @@ function Base.iterate(iter::LMDBIterator, refs)
     if ret == 0
         #Check if we are still in key prefix
         if !isempty(iter.prefix)
-            k = convert(Vector{UInt8}, mdb_key_ref)
+            k = mbd_unpack(Vector{UInt8}, mdb_key_ref)
             if any(i->!=(i...),zip(iter.prefix, k))
                 return nothing
             end
@@ -118,14 +118,14 @@ function DirectoryLister(; sep = '/', lprefix=0)
 end
 
 function process_returns(l::DirectoryLister{K}, mdb_key_ref, _) where K
-    k = convert(Vector{UInt8}, mdb_key_ref)
+    k = mbd_unpack(Vector{UInt8}, mdb_key_ref)
     nextsep = findnext(==(l.sep),k,l.istart)
     if nextsep === nothing
-        return arcopy(convert(K, mdb_key_ref)),MDB_NEXT
+        return arcopy(mbd_unpack(K, mdb_key_ref)),MDB_NEXT
     else
         k = copy(k)
         resize!(k,nextsep)
-        kout = arcopy(convert(K, Ref(MDBValue(k))))
+        kout = arcopy(mbd_unpack(K, Ref(MDBValue(k))))
         k[end] = k[end]+1
         mdb_key_ref[] = MDBValue(k)
         return kout, MDB_SET_RANGE
@@ -165,7 +165,7 @@ function get(cur::Cursor, key, ::Type{T}, op::MDB_cursor_op=MDB_SET_KEY) where T
     mdb_cursor_get(cur.handle, mdb_key_ref, mdb_val_ref, op)
 
     # Convert to proper type
-    return convert(T, mdb_val_ref)
+    return mbd_unpack(T, mdb_val_ref)
 end
 
 """Store by cursor.
