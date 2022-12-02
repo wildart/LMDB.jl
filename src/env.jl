@@ -106,12 +106,20 @@ unset!(env::Environment, flag::EnvironmentFlags) = unset!(env, Cuint(flag))
 function setindex!(env::Environment, val::Cuint, option::Symbol)
     if option == :Readers
         mdb_env_set_maxreaders(env.handle, val)
-    elseif option == :MapSize
-        mdb_env_set_mapsize(env.handle, val)
     elseif option == :DBs
         mdb_env_set_maxdbs(env.handle, val)
     else
         @warn("Cannot set $(string(option)) value")
+        Cint(0)
+    end
+end
+
+function setindex!(env::Environment, val::Csize_t, option::Symbol)
+    if  option == :MapSize
+        println("Setting map size to: ", val)
+        mdb_env_set_mapsize(env.handle, val)
+    else
+        warn("Cannot set $(string(option)) value")
         Cint(0)
     end
 end
